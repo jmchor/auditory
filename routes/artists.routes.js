@@ -2,15 +2,7 @@ const router = require("express").Router();
 const axios = require('axios');
 const pool = require("../db")
 const getArtists = require("../getArtist")
-
-function arraysEqual(arr1, arr2) {
-    if (arr1.length !== arr2.length) return false;
-    for (let i = 0; i < arr1.length; i++) {
-        if (arr1[i] !== arr2[i]) return false;
-    }
-    return true;
-}
-
+const arraysEqual = require("../arraysEqual")
 
 router.post("/single/:id", async (req, res, next) => {
     const id = req.params.id;
