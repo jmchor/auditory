@@ -5,7 +5,7 @@ const pool = require("../db")
 const searchYouTubeVideos = require("../yt-search")
 
 
-router.get("/:id", async (req, res, next) => {
+router.get("/single/:id", async (req, res, next) => {
     try {
         const id = req.params.id; // Corrected way to get the parameter value
 
@@ -41,6 +41,43 @@ router.get("/:id", async (req, res, next) => {
         res.status(500).send('Internal Server Error');
     }
 });
+
+
+
+
+
+router.get("/album/:albumId", async (req, res, next) => {
+    try {
+        const albumId = req.params.albumId;
+
+        // Fetch associated artist and track information from the songs table
+        const tracks = await pool.query(
+            'SELECT * FROM songs WHERE albumID = $1',
+            [albumId]
+        );
+
+
+        // Loop through the array and perform a YouTube search for each track
+        for (const track of tracks.rows) {
+            const artistAndTrack = `${track.artist} ${track.track}`;
+            const youtubeURL = await searchYouTubeVideos(artistAndTrack);
+
+            // Update the youtube_url column for the current trackID
+            await pool.query(
+                'UPDATE songs SET youtube_url = $1 WHERE trackId = $2',
+                [youtubeURL, track.trackid]
+            );
+        }
+
+        res.json({ success: true, message: 'YouTube URLs updated successfully' });
+    } catch (error) {
+        console.error('Error updating YouTube URLs:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+
+
 
 module.exports = router;
 
