@@ -14,11 +14,11 @@ async function searchYouTubeVideos(query) {
                 key: apiKey,
               };
             const response = await axios.get(apiUrl, { params });
-  
-            // Accessing and storing the result
-            const items = response.data.items;
-            const videoId = JSON.stringify(items.id.videoId);
-            url = `https://www.youtube.com/watch?v=${videoId}`;
+          
+            const url = `https://www.youtube.com/watch?v=${response.data.items[0].id.videoId}`;
+
+           console.log("The URL is here:" + url)
+           return url;
   
               
           } catch (error) {
