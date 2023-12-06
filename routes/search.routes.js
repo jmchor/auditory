@@ -18,23 +18,23 @@ router.get("/single/:id", async (req, res, next) => {
         const song = track.rows[0].track
         const query = `${artist} ${song}`
 
-       const youtubeURL = await searchYouTubeVideos(query)
+        const youtubeURL = await searchYouTubeVideos(query)
 
 
 
-       const updateResult = await pool.query(
-        'UPDATE songs SET youtube_url = $1 WHERE trackId = $2 RETURNING *',
-        [youtubeURL, id]
-    );
+        const updateResult = await pool.query(
+            'UPDATE songs SET youtube_url = $1 WHERE trackId = $2 RETURNING *',
+            [youtubeURL, id]
+        );
 
-    // Check if the update was successful
-    if (updateResult.rows.length > 0) {
-        console.log('YouTube URL updated:', updateResult.rows[0]);
-        res.json({ success: true, track: updateResult.rows[0] });
-    } else {
-        console.log('No matching track found for trackId:', id);
-        res.status(404).json({ success: false, error: 'Track not found' });
-    }
+        // Check if the update was successful
+        if (updateResult.rows.length > 0) {
+            console.log('YouTube URL updated:', updateResult.rows[0]);
+            res.json({ success: true, track: updateResult.rows[0] });
+        } else {
+            console.log('No matching track found for trackId:', id);
+            res.status(404).json({ success: false, error: 'Track not found' });
+        }
 
     } catch (error) {
         console.error('Error fetching track:', error);
