@@ -25,7 +25,7 @@ const albumRoutes = require("./routes/albums.routes");
 app.use("/albums", albumRoutes);
 
 const searchRoutes = require("./routes/search.routes");
-app.use("/songs", searchRoutes);
+app.use("/search", searchRoutes);
 
 const artistsRoutes = require("./routes/artists.routes");
 app.use("/artists", artistsRoutes);
