@@ -1,44 +1,85 @@
 const axios = require('axios');
-const getAccessToken = require("./accessToken")
+const getAccessToken = require("./accessToken");
 
-async function getAlbums(id) {
+async function getAlbums(array) {
+  const accessToken = await getAccessToken();
 
-    const accessToken = await getAccessToken();
+  const MAX_REQUESTS_PER_SECOND = 10;
+  const DELAY_BETWEEN_REQUESTS = 1000 / MAX_REQUESTS_PER_SECOND; // Milliseconds
 
-    function formatReleaseDate(releaseDate) {
-        // If the release date has only the year
-        if (releaseDate.length === 4) {
-          // Assuming January 1 as the default day and month
-          return `${releaseDate}-01-01`;
-        }
-      
-        // If the release date is in another format or already includes the full date
-        return releaseDate;
+  function formatReleaseDate(releaseDate) {
+    if (releaseDate.length === 4) {
+      return `${releaseDate}-01-01T00:00:00.000Z`;
+    } else if (releaseDate.length === 7) {
+      return `${releaseDate}-01T00:00:00.000Z`;
+    } else {
+      return new Date(releaseDate).toISOString().split('T')[0] + 'T00:00:00.000Z';
+    }
+  }
+
+  try {
+    const chunks = array.reduce((resultArray, item, index) => {
+      const chunkIndex = Math.floor(index / 50);
+
+      if (!resultArray[chunkIndex]) {
+        resultArray[chunkIndex] = [];
       }
 
+      resultArray[chunkIndex].push(item);
 
+      return resultArray;
+    }, []);
 
-    try {
-      const response = await axios.get(`https://api.spotify.com/v1/albums/${id}`, {
+    const albumObjects = [];
+
+    for (const innerArray of chunks) {
+      const idsString = innerArray.join(',');
+
+      const response = await axios.get(`https://api.spotify.com/v1/albums?ids=${idsString}`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       });
 
-       const {label, name, release_date, total_tracks, artists} = response.data
+      const albums = response.data.albums;
 
+      for (const album of albums) {
+        if (!album || !album.id || !album.name || !album.release_date || !album.artists || !album.total_tracks) {
+          console.error('Skipping invalid album:', album);
+          continue;
+        }
 
-       const albumObject = {albumId: id, label, albumName: name, artist: artists[0].name, releaseDate: formatReleaseDate(release_date), trackCount: total_tracks}
-       return albumObject
+        const { id, name, release_date, artists, total_tracks } = album;
+        const albumObject = {
+          albumId: id,
+          albumName: name,
+          releaseDate: formatReleaseDate(release_date),
+          artistId: artists[0].id,
+          totalTracks: total_tracks,
+        };
 
-    } catch (error) {
-      console.error('Error getting playlists:', error.message);
-      return null;
+        albumObjects.push(albumObject);
+      }
+
+      // Introduce delay to comply with rate limit
+      await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_REQUESTS));
     }
+
+    return albumObjects;
+
+  } catch (error) {
+    const retryAfter = error.response.headers['retry-after'];
+
+    if (retryAfter) {
+      console.log(`Retry-After header found. Retry after ${retryAfter} seconds.`);
+      // Implement your retry logic here (e.g., wait for the specified duration and then retry)
+    }
+    console.error('Error getting albums:', error.message);
+
+    return {
+      error: true,
+    };
   }
+}
 
-
-
-
-  module.exports = getAlbums;
-
+module.exports = getAlbums;
