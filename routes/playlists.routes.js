@@ -13,12 +13,12 @@ router.get("/", async (req, res, next) => {
 
 
     for (const song of allTracks) {
-      const { artist, track, trackId, duration, albumName, spotifyID, albumID } = song;
+      const { artist, track, track_id, duration, albumName, artist_id, albumID } = song;
 
       try {
         // Check if the song already exists in the database
         const existingSong = await pool.query(
-          'SELECT * FROM songs WHERE artist = $1 AND track = $2',
+          'SELECT * FROM tracks WHERE artist = $1 AND track = $2',
           [artist, track]
         );
 
@@ -30,15 +30,15 @@ router.get("/", async (req, res, next) => {
 
         // If the song doesn't exist, insert it
         const result = await pool.query(
-          'INSERT INTO songs (artist, spotifyID, track, duration, albumName, albumID, trackid) VALUES ($artist, $spotifyID, $track, $duration, $albumName, $albumID, $trackid) RETURNING *',
+          'INSERT INTO songs (artist, artist_id, track, duration, albumName, albumID, track_id) VALUES ($artist, $artist_id, $track, $duration, $albumName, $albumID, $track_id) RETURNING *',
           {
             $artist: artist,
-            $spotifyID: spotifyID,
+            $artist_id: artist_id,
             $track: track,
             $duration: duration,
             $albumName: albumName,
             $albumID: albumID,
-            $trackid: trackId
+            $track_id: track_id
           }
         );
 

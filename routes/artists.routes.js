@@ -10,12 +10,12 @@ router.post("/single/:id", async (req, res, next) => {
     try {
         const artistObject = await getArtists(id);
 
-        const { spotifyID, artist, genres, albumids, more_info } = artistObject;
+        const { artist_id, artist, genres, albumids, more_info } = artistObject;
 
         // Check if the artist already exists in the database
         const existingArtist = await pool.query(
-            'SELECT * FROM artists WHERE spotifyid = $1',
-            [spotifyID]
+            'SELECT * FROM artists WHERE artist_id = $1',
+            [artist_id]
         );
 
         if (existingArtist.rows.length > 0) {
@@ -26,13 +26,13 @@ router.post("/single/:id", async (req, res, next) => {
             if (
                 existingInfo.more_info !== more_info ||
                 existingInfo.artist !== artist ||
-                !arraysEqual(existingInfo.genres, genres) || // Check if arrays are equal
-                !arraysEqual(existingInfo.albumids, albumids) // Check if arrays are equal
+                (!genres || !existingInfo.genres || !arraysEqual(existingInfo.genres, genres)) || // Check if arrays are equal
+                (!albumids || !existingInfo.albumids || !arraysEqual(existingInfo.albumids, albumids)) // Check if arrays are equal
             ) {
                 // Update the table record with additional info
                 const updateResult = await pool.query(
-                    'UPDATE artists SET artist = $2, more_info = $3, genres = $4, albumids = $5 WHERE spotifyid = $1 RETURNING *',
-                    [spotifyID, artist, more_info, genres, albumids]
+                    'UPDATE artists SET artist = $2, more_info = $3, genres = $4, album_ids = $5 WHERE artist_id = $1 RETURNING *',
+                    [artist_id, artist, more_info, genres, albumids]
                 );
 
                 console.log('Updated artist info:', updateResult.rows[0]);
@@ -48,14 +48,8 @@ router.post("/single/:id", async (req, res, next) => {
         // If the artist doesn't exist, insert it
 
         const result = await pool.query(
-            'INSERT INTO artists (artist, spotifyid, genres, albumids) VALUES ($artist, $spotifyID, $genres, $albumids, $more_info) RETURNING *',
-            {
-                $artist: artistName,
-                $spotifyID: spotifyID,
-                $genres: genres,
-                $albumids: albumids,
-                $more_info: more_info
-            }
+            'INSERT INTO artists (artist, artist_id, genres, albumids, more_info) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [artist, artist_id, genres, albumids, more_info]
         );
         // Optionally, you can log the result or perform additional actions
         console.log('Inserted artist:', result.rows[0]);
@@ -71,12 +65,13 @@ router.post("/single/:id", async (req, res, next) => {
 
 
 
+
 //get artists by ID and populate the artists table
 
 router.get("/bulk", async (req, res, next) => {
     try {
-        const allArtists = await pool.query('SELECT DISTINCT spotifyid FROM songs');
-        const artistIDs = allArtists.rows.map(row => row.spotifyid);
+        const allArtists = await pool.query('SELECT DISTINCT artist_id FROM tracks');
+        const artistIDs = allArtists.rows.map(row => row.artist_id);
 
         const artistObjects = [];
         const failedEntries = [];
@@ -96,12 +91,12 @@ router.get("/bulk", async (req, res, next) => {
 
         for (const artistObject of artistObjects) {
             try {
-                const { spotifyID, artist, genres, albumids, more_info } = artistObject;
+                const { artist_id, artist, genres, albumids, more_info } = artistObject;
 
                 // Check if the artist already exists in the database
                 const existingArtist = await pool.query(
-                    'SELECT * FROM artists WHERE spotifyid = $1',
-                    [spotifyID]
+                    'SELECT * FROM artists WHERE artist_id = $1',
+                    [artist_id]
                 );
 
                 if (existingArtist.rows.length > 0) {
@@ -119,8 +114,8 @@ router.get("/bulk", async (req, res, next) => {
                         const updatedGenres = genres.length > 0 ? genres : ['none']; // Insert 'none' if genres is empty
                         const updatedAlbumIDs = albumids.length > 0 ? albumids : ['none']; // Insert 'none' if albumids is empty
                         const updateResult = await pool.query(
-                            'UPDATE artists SET artist = $2, more_info = $3, genres = $4, albumids = $5 WHERE spotifyid = $1 RETURNING *',
-                            [spotifyID, artist, more_info, updatedGenres, updatedAlbumIDs]
+                            'UPDATE artists SET artist = $2, more_info = $3, genres = $4, album_ids = $5 WHERE artist_id = $1 RETURNING *',
+                            [artist_id, artist, more_info, updatedGenres, updatedAlbumIDs]
                         );
 
                         console.log('Updated artist info:', updateResult.rows[0]);
@@ -135,10 +130,10 @@ router.get("/bulk", async (req, res, next) => {
                 const insertGenres = genres.length > 0 ? genres : ['none']; // Insert 'none' if genres is empty
                 const insertAlbumIDs = albumids.length > 0 ? albumids : ['none']; // Insert 'none' if albumids is empty
                 const result = await pool.query(
-                    'INSERT INTO artists (artist, spotifyid, genres, albumids) VALUES ($artist, $spotifyID, $genres, $albumids, $more_info) RETURNING *',
+                    'INSERT INTO artists (artist, artist_id, genres, albumids) VALUES ($artist, $artist_id, $genres, $albumids, $more_info) RETURNING *',
                     {
                         $artist: artist,
-                        $spotifyID: spotifyID,
+                        $artist_id: artist_id,
                         $genres: genres,
                         $albumids: albumids,
                         $more_info: more_info
