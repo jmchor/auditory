@@ -27,8 +27,14 @@ app.use("/albums", albumRoutes);
 const searchRoutes = require("./routes/search.routes");
 app.use("/search", searchRoutes);
 
+const yTUpdateRoutes = require("./routes/yt-update.routes");
+app.use("/ytupdate", yTUpdateRoutes);
+
 const artistsRoutes = require("./routes/artists.routes");
 app.use("/artists", artistsRoutes);
+
+const tracksRoutes = require("./routes/tracks.routes");
+app.use("/tracks", tracksRoutes);
 
 
 // ❗ To handle errors. Routes that don't exist or errors that you handle in specific routes
