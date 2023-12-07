@@ -30,7 +30,7 @@ async function getArtist(id) {
             return item.id
         })
 
-        const artistObject = { spotifyID: id, artist: name, genres, albumids: albums, more_info: href }
+        const artistObject = { artist_id: id, artist: name, genres, albumids: albums, more_info: href }
 
         return artistObject
 
