@@ -11,7 +11,7 @@ async function searchArtist(query) {
         const encodedQuery = encodeURIComponent(query);
         console.log(encodedQuery)
 
-        const response = await axios.get(`https://api.spotify.com/v1/search?q=${encodedQuery}&type=artist&limit=5`, {
+        const response = await axios.get(`https://api.spotify.com/v1/search?q=${encodedQuery}&type=artist&limit=10`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
             },
@@ -23,7 +23,7 @@ async function searchArtist(query) {
         const artistObject = items
             .filter(item => item.name.toLowerCase() === query.toLowerCase())
             .map(item => ({
-                spotifyID: item.id,
+                artist_id: item.id,
                 artist: item.name,
                 genres: item.genres,
                 more_info: item.href,
@@ -35,7 +35,7 @@ async function searchArtist(query) {
         }
 
         // Get the artist's albums
-        const albums = await getArtist(artistObject[0].spotifyID);
+        const albums = await getArtist(artistObject[0].artist_id);
         artistObject[0].albumids = albums.albumids;
 
         return artistObject[0];
