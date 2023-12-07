@@ -2,76 +2,13 @@ const router = require("express").Router();
 const axios = require('axios');
 const pool = require("../db")
 
-const searchYouTubeVideos = require("../yt-search")
 const searchArtist = require("../searchArtist")
 const arraysEqual = require("../arraysEqual")
 
 
-router.get("/single-track/:id", async (req, res, next) => {
-    try {
-        const id = req.params.id; // Corrected way to get the parameter value
-
-        const track = await pool.query(
-            'SELECT * FROM songs WHERE trackId = $1',
-            [id]
-        );
-
-        const artist = track.rows[0].artist
-        const song = track.rows[0].track
-        const query = `${artist} ${song}`
-        const youtubeURL = await searchYouTubeVideos(query)
-
-        const updateResult = await pool.query(
-            'UPDATE songs SET youtube_url = $1 WHERE trackId = $2 RETURNING *',
-            [youtubeURL, id]
-        );
-
-        // Check if the update was successful
-        if (updateResult.rows.length > 0) {
-            console.log('YouTube URL updated:', updateResult.rows[0]);
-            res.json({ success: true, track: updateResult.rows[0] });
-        } else {
-            console.log('No matching track found for trackId:', id);
-            res.status(404).json({ success: false, error: 'Track not found' });
-        }
-
-    } catch (error) {
-        console.error('Error fetching track:', error);
-        res.status(500).send('Internal Server Error');
-    }
-});
-
-
-
-
-router.get("/album/:albumId", async (req, res, next) => {
-    try {
-        const albumId = req.params.albumId;
-
-        // Fetch associated artist and track information from the songs table
-        const tracks = await pool.query(
-            'SELECT * FROM songs WHERE albumID = $1',
-            [albumId]
-        );
-
-        // Loop through the array and perform a YouTube search for each track
-        for (const track of tracks.rows) {
-            const artistAndTrack = `${track.artist} ${track.track}`;
-            const youtubeURL = await searchYouTubeVideos(artistAndTrack);
-
-            // Update the youtube_url column for the current trackID
-            await pool.query(
-                'UPDATE songs SET youtube_url = $1 WHERE trackId = $2',
-                [youtubeURL, track.trackid]
-            );
-        }
-
-        res.json({ success: true, message: 'YouTube URLs updated successfully' });
-    } catch (error) {
-        console.error('Error updating YouTube URLs:', error);
-        res.status(500).send('Internal Server Error');
-    }
-});
+//===================================================================================================
+//===========================  SEARCH ARTIST BY QUERY AND INSERT IN DB ==============================
+//===================================================================================================
 
 
 router.post("/single-artist/:query", async (req, res, next) => {
@@ -86,12 +23,12 @@ router.post("/single-artist/:query", async (req, res, next) => {
             return;
         }
 
-        const { spotifyID, artist, genres, more_info } = result;
+        const { artist_id, artist, genres, more_info } = result;
 
         // Check if the artist already exists in the database
         const existingArtist = await pool.query(
-            'SELECT * FROM artists WHERE spotifyid = $1',
-            [spotifyID]
+            'SELECT * FROM artists WHERE artist_id = $1',
+            [artist_id]
         );
 
         if (existingArtist.rows.length > 0) {
@@ -107,8 +44,8 @@ router.post("/single-artist/:query", async (req, res, next) => {
                 // Update the table record with additional info
                 const updatedGenres = genres.length > 0 ? genres : ['none']; // Insert 'none' if genres is empty
                 const updateResult = await pool.query(
-                    'UPDATE artists SET artist = $2, more_info = $3, genres = $4 WHERE spotifyid = $1 RETURNING *',
-                    [spotifyID, artist, more_info, updatedGenres]
+                    'UPDATE artists SET artist = $2, more_info = $3, genres = $4 WHERE artist_id = $1 RETURNING *',
+                    [artist_id, artist, more_info, updatedGenres]
                 );
 
                 console.log('Updated artist info:', updateResult.rows[0]);
@@ -120,8 +57,8 @@ router.post("/single-artist/:query", async (req, res, next) => {
             // If the artist doesn't exist, insert it
             const insertGenres = genres.length > 0 ? genres : ['none']; // Insert 'none' if genres is empty
             const insertResult = await pool.query(
-                'INSERT INTO artists (artist, spotifyid, genres, more_info) VALUES ($1, $2, $3, $4) RETURNING *',
-                [artist, spotifyID, insertGenres, more_info]
+                'INSERT INTO artists (artist, artist_id, genres, more_info) VALUES ($1, $2, $3, $4) RETURNING *',
+                [artist, artist_id, insertGenres, more_info]
             );
 
             // Optionally, you can log the result or perform additional actions
@@ -135,15 +72,91 @@ router.post("/single-artist/:query", async (req, res, next) => {
     }
 });
 
+//===================================================================================================
+//======== LOOP OVER ARTISTS IN ARTISTS TABLE, FETCH API DATA AND BULK INSERT TO DB =================
+//===================================================================================================
+
 
 router.post("/multiple-artists", async (req, res, next) => {
+    try {
+        const failedEntries = []; // Array to collect failed entries
+        let artistNames = [];
 
+        // Query the artists table for all artists
+        const allArtists = await pool.query('SELECT * FROM artists');
+        artistNames = allArtists.rows.map(row => row.artist);
 
-})
+        // Loop over the array and perform a search for each artist
+        for (const artistName of artistNames) {
+            try {
+                const result = await searchArtist(artistName);
 
+                if (!result) {
+                    // No matching artist found
+                    console.log(`No matching artist found for '${artistName}'.`);
+                    failedEntries.push({ artist: artistName, reason: 'No matching artist found' });
+                    continue;
+                }
 
+                const { artist_id, artist, genres, more_info, albumids } = result;
 
+                // Check if the artist already exists in the database
+                const existingArtist = await pool.query(
+                    'SELECT * FROM artists WHERE artist_id = $1',
+                    [artist_id]
+                );
 
+                if (existingArtist.rows.length > 0) {
+                    // Artist already exists, check if additional info is missing
+                    const existingInfo = existingArtist.rows[0];
+
+                    // Check if any additional info is missing and needs to be updated
+                    if (
+                        existingInfo.more_info !== more_info ||
+                        existingInfo.artist !== artist ||
+                        !arraysEqual(existingInfo.genres, genres) || // Check if arrays are equal
+                        !arraysEqual(existingInfo.albumids, albumids) // Check if arrays are equal
+                    ) {
+                        // Update the table record with additional info
+                        const updatedGenres = genres.length > 0 ? genres : ['none']; // Insert 'none' if genres is empty
+                        const updatedAlbumIDs = albumids.length > 0 ? albumids : ['none']; // Insert 'none' if albumids is empty
+                        const updateResult = await pool.query(
+                            'UPDATE artists SET artist = $2, more_info = $3, genres = $4, album_ids = $5 WHERE artist_id = $1 RETURNING *',
+                            [artist_id, artist, more_info, updatedGenres, updatedAlbumIDs]
+                        );
+
+                        console.log('Updated artist info:', updateResult.rows[0]);
+                    } else {
+                        // No additional info to update
+                        console.log(`Artist '${artist}' already exists with complete info. Skipping update.`);
+                    }
+                } else {
+                    // If the artist doesn't exist, insert it
+                    const insertGenres = genres.length > 0 ? genres : ['none']; // Insert 'none' if genres is empty
+                    const insertAlbumIDs = albumids.length > 0 ? albumids : ['none']; // Insert 'none' if albumids is empty
+                    const insertResult = await pool.query(
+                        'INSERT INTO artists (artist, artist_id, genres, more_info, albumids) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+                        [artist, artist_id, insertGenres, more_info, insertAlbumIDs]
+                    );
+
+                    // Optionally, you can log the result or perform additional actions
+                    console.log('Inserted artist:', insertResult.rows[0]);
+                }
+            } catch (error) {
+                console.error(`Error processing artist '${artistName}':`, error.message);
+                failedEntries.push({ artist: artistName, reason: error.message });
+                // Continue with the next iteration in case of an error
+                continue;
+            }
+        }
+
+        // Send response with success and failed entries
+        res.json({ success: true, message: 'Records created/updated in the artist database', failedEntries });
+    } catch (error) {
+        console.error('Error processing multiple artists:', error.message);
+        res.status(500).json({ success: false, error: 'Internal Server Error' });
+    }
+});
 
 
 
