@@ -1,85 +1,95 @@
 const axios = require('axios');
-const getAccessToken = require("./accessToken");
+const getAccessToken = require('./accessToken');
 
 async function getAlbums(array) {
-  const accessToken = await getAccessToken();
+	const accessToken = await getAccessToken();
 
-  const MAX_REQUESTS_PER_SECOND = 10;
-  const DELAY_BETWEEN_REQUESTS = 1000 / MAX_REQUESTS_PER_SECOND; // Milliseconds
+	const MAX_REQUESTS_PER_SECOND = 10;
+	const DELAY_BETWEEN_REQUESTS = 10000 / MAX_REQUESTS_PER_SECOND; // Milliseconds
 
-  function formatReleaseDate(releaseDate) {
-    if (releaseDate.length === 4) {
-      return `${releaseDate}-01-01T00:00:00.000Z`;
-    } else if (releaseDate.length === 7) {
-      return `${releaseDate}-01T00:00:00.000Z`;
-    } else {
-      return new Date(releaseDate).toISOString().split('T')[0] + 'T00:00:00.000Z';
-    }
-  }
+	function formatReleaseDate(releaseDate) {
+		if (releaseDate.length === 4) {
+			return `${releaseDate}-01-01T00:00:00.000Z`;
+		} else if (releaseDate.length === 7) {
+			return `${releaseDate}-01T00:00:00.000Z`;
+		} else {
+			return new Date(releaseDate).toISOString().split('T')[0] + 'T00:00:00.000Z';
+		}
+	}
 
-  try {
-    const chunks = array.reduce((resultArray, item, index) => {
-      const chunkIndex = Math.floor(index / 50);
+	try {
+		const chunks = array.reduce((resultArray, item, index) => {
+			const chunkIndex = Math.floor(index / 50);
 
-      if (!resultArray[chunkIndex]) {
-        resultArray[chunkIndex] = [];
-      }
+			if (!resultArray[chunkIndex]) {
+				resultArray[chunkIndex] = [];
+			}
 
-      resultArray[chunkIndex].push(item);
+			resultArray[chunkIndex].push(item);
 
-      return resultArray;
-    }, []);
+			return resultArray;
+		}, []);
 
-    const albumObjects = [];
+		console.log(chunks.length);
 
-    for (const innerArray of chunks) {
-      const idsString = innerArray.join(',');
+		const albumObjects = [];
 
-      const response = await axios.get(`https://api.spotify.com/v1/albums?ids=${idsString}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+		for (const innerArray of chunks) {
+			const idsString = innerArray.join(',');
 
-      const albums = response.data.albums;
+			const response = await axios.get(`https://api.spotify.com/v1/albums?ids=${idsString}`, {
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			});
 
-      for (const album of albums) {
-        if (!album || !album.id || !album.name || !album.release_date || !album.artists || !album.total_tracks) {
-          console.error('Skipping invalid album:', album);
-          continue;
-        }
+			const albums = response.data.albums;
 
-        const { id, name, release_date, artists, total_tracks } = album;
-        const albumObject = {
-          albumId: id,
-          albumName: name,
-          releaseDate: formatReleaseDate(release_date),
-          artistId: artists[0].id,
-          totalTracks: total_tracks,
-        };
+			for (const album of albums) {
+				if (
+					!album ||
+					!album.id ||
+					!album.name ||
+					!album.release_date ||
+					!album.artists ||
+					!album.total_tracks ||
+					!album.album_type
+				) {
+					console.error('Skipping invalid album:', album);
+					continue;
+				}
 
-        albumObjects.push(albumObject);
-      }
+				const { id, name, release_date, artists, total_tracks, album_type } = album;
+				const albumObject = {
+					albumId: id,
+					albumName: name,
+					releaseDate: formatReleaseDate(release_date),
+					artistId: artists[0].id,
+					totalTracks: total_tracks,
+					album_type: album_type,
+				};
 
-      // Introduce delay to comply with rate limit
-      await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_REQUESTS));
-    }
+				albumObjects.push(albumObject);
+			}
 
-    return albumObjects;
+			// Introduce delay to comply with rate limit
+			await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_REQUESTS));
+		}
 
-  } catch (error) {
-    const retryAfter = error.response.headers['retry-after'];
+		return albumObjects;
+	} catch (error) {
+		const retryAfter = error.response.headers['retry-after'];
 
-    if (retryAfter) {
-      console.log(`Retry-After header found. Retry after ${retryAfter} seconds.`);
-      // Implement your retry logic here (e.g., wait for the specified duration and then retry)
-    }
-    console.error('Error getting albums:', error.message);
+		if (retryAfter) {
+			console.log(`Retry-After header found. Retry after ${retryAfter} seconds.`);
+			// Implement your retry logic here (e.g., wait for the specified duration and then retry)
+		}
+		console.error('Error getting albums:', error.message);
 
-    return {
-      error: true,
-    };
-  }
+		return {
+			error: true,
+		};
+	}
 }
 
 module.exports = getAlbums;

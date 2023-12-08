@@ -1,0 +1,26 @@
+{
+	"parser": "@babel/eslint-parser",
+
+	"overrides": [
+		{
+
+			"extends": [
+				"wesbos",
+				"eslint:recommended",
+				"plugin:prettier/recommended"
+			],
+
+			"parserOptions": {
+				"project": ["./tsconfig.json"], // Specify it only for TypeScript files
+				"ecmaVersion": "latest",
+				"sourceType": "module"
+			},
+			"rules": {
+				"no-console": 0
+			}
+		}
+	]
+}
+
+//combined Wes Bos eslintrc with this : https://stackoverflow.com/questions/58510287/parseroptions-project-has-been-set-for-typescript-eslint-parser
+
