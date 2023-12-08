@@ -42,23 +42,33 @@ router.get('/single-track/:id', async (req, res, next) => {
 //=======================  SEARCH ALBUMID AND ADD YT URL TO EACH TRACK ==============================
 //===================================================================================================
 
+// base route is /ytupdate
+
 router.get('/album/:albumId', async (req, res, next) => {
 	try {
 		const albumId = req.params.albumId;
 
-		// Fetch associated artist and track information from the songs table
-		const tracks = await pool.query('SELECT * FROM tracks WHERE albumID = $1', [albumId]);
+		// Fetch associated artist and track information from the tracks and artists tables
+		const query = `
+		SELECT tracks.*, artists.artist
+		FROM tracks
+		INNER JOIN artists ON tracks.artist_id = artists.artist_id
+		WHERE tracks.albumID = $1
+	  `;
+		const tracks = await pool.query(query, [albumId]);
 
 		// Loop through the array and perform a YouTube search for each track
 		for (const track of tracks.rows) {
 			const artistAndTrack = `${track.artist} ${track.track}`;
-			const youtubeURL = await searchYouTubeVideos(artistAndTrack);
 
-			// Update the youtube_url column for the current trackID
-			await pool.query('UPDATE songs SET youtube_url = $1 WHERE track_id = $2', [
-				youtubeURL,
-				track.track_id,
-			]);
+			console.log('Searching YouTube for:', artistAndTrack);
+			// const youtubeURL = await searchYouTubeVideos(artistAndTrack);
+
+			// // Update the youtube_url column for the current trackID
+			// await pool.query('UPDATE songs SET youtube_url = $1 WHERE track_id = $2', [
+			// 	youtubeURL,
+			// 	track.track_id,
+			// ]);
 		}
 
 		res.json({ success: true, message: 'YouTube URLs updated successfully' });
