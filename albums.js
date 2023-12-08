@@ -4,8 +4,8 @@ const getAccessToken = require('./accessToken');
 async function getAlbums(array) {
 	const accessToken = await getAccessToken();
 
-	const MAX_REQUESTS_PER_SECOND = 10;
-	const DELAY_BETWEEN_REQUESTS = 10000 / MAX_REQUESTS_PER_SECOND; // Milliseconds
+	const MAX_REQUESTS_PER_SECOND = 5;
+	const DELAY_BETWEEN_REQUESTS = 1000 / MAX_REQUESTS_PER_SECOND; // Milliseconds
 
 	function formatReleaseDate(releaseDate) {
 		if (releaseDate.length === 4) {
@@ -19,7 +19,7 @@ async function getAlbums(array) {
 
 	try {
 		const chunks = array.reduce((resultArray, item, index) => {
-			const chunkIndex = Math.floor(index / 50);
+			const chunkIndex = Math.floor(index / 20);
 
 			if (!resultArray[chunkIndex]) {
 				resultArray[chunkIndex] = [];
@@ -30,9 +30,8 @@ async function getAlbums(array) {
 			return resultArray;
 		}, []);
 
-		console.log(chunks.length);
-
-		const albumObjects = [];
+		let albumObjects = [];
+		let counter = 0;
 
 		for (const innerArray of chunks) {
 			const idsString = innerArray.join(',');
@@ -44,6 +43,8 @@ async function getAlbums(array) {
 			});
 
 			const albums = response.data.albums;
+
+			console.log(albums.length);
 
 			for (const album of albums) {
 				if (
@@ -59,22 +60,28 @@ async function getAlbums(array) {
 					continue;
 				}
 
-				const { id, name, release_date, artists, total_tracks, album_type } = album;
+				const { id, name, release_date, artists, total_tracks, album_type, label } = album;
 				const albumObject = {
 					albumId: id,
 					albumName: name,
 					releaseDate: formatReleaseDate(release_date),
 					artistId: artists[0].id,
-					totalTracks: total_tracks,
+					trackCount: total_tracks,
 					album_type: album_type,
+					label: album.label,
 				};
 
 				albumObjects.push(albumObject);
 			}
 
 			// Introduce delay to comply with rate limit
+
+			counter += 1;
+			console.log('Delaying requests...', counter);
 			await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_REQUESTS));
 		}
+
+		console.log('Albums fetched:', albumObjects.length);
 
 		return albumObjects;
 	} catch (error) {
