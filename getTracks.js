@@ -8,11 +8,11 @@ function millisToMinutesAndSeconds(millis) {
 }
 
 async function getMultipleTracks(array) {
-	try {
-		const accessToken = await getAccessToken();
+	const accessToken = await getAccessToken();
 
+	try {
 		const MAX_REQUESTS_PER_SECOND = 10;
-		const DELAY_BETWEEN_REQUESTS = 1000 / MAX_REQUESTS_PER_SECOND; // Milliseconds
+		const DELAY_BETWEEN_REQUESTS = 3000; // 3 seconds in milliseconds
 
 		// Split the array into chunks of 50 tracks and concatenate them into a string, where each track is separated by %2C
 		const chunks = array.reduce((resultArray, item, index) => {
@@ -27,11 +27,12 @@ async function getMultipleTracks(array) {
 			return resultArray;
 		}, []);
 
-		const IDs = chunks.map((innerArray) => innerArray.join(','));
+		let trackObjects = [];
+		let callCounter = 0;
 
-		const trackObjects = [];
+		for (const innerArray of chunks) {
+			const idsString = innerArray.join(',');
 
-		for (const idsString of IDs) {
 			const response = await axios.get(`https://api.spotify.com/v1/tracks?ids=${idsString}`, {
 				headers: {
 					Authorization: `Bearer ${accessToken}`,
@@ -39,6 +40,7 @@ async function getMultipleTracks(array) {
 			});
 
 			const tracks = response.data.tracks;
+			console.log('Tracks:', tracks.length);
 
 			for (const track of tracks) {
 				if (
@@ -67,6 +69,10 @@ async function getMultipleTracks(array) {
 
 			// Introduce delay to comply with rate limit
 			await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_REQUESTS));
+
+			// Increment the call counter
+			callCounter += 1;
+			console.log(`Call #${callCounter} completed.`);
 		}
 
 		return trackObjects;

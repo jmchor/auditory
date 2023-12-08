@@ -75,13 +75,13 @@ router.post('/multiple-albums', async (req, res, next) => {
 					) {
 						// Update the table record with additional info
 						const updateResult = await pool.query(
-							'UPDATE songs SET track = $1, artist_id = $2, duration = $3, albumid = $4 WHERE track_id = $5 RETURNING *',
+							'UPDATE tracks SET track = $1, artist_id = $2, duration = $3, albumid = $4 WHERE track_id = $5 RETURNING *',
 							[trackName, artistId, duration, albumId, track_id]
 						);
 
 						// Check if the update was successful
 						if (updateResult.rows.length > 0) {
-							console.log('Track updated:', updateResult.rows[0]);
+							console.log('Track updated:', trackName);
 						} else {
 							console.log('No matching track found for track_id:', track_id);
 							failedEntries.push({
@@ -98,12 +98,12 @@ router.post('/multiple-albums', async (req, res, next) => {
 				} else {
 					// If the track doesn't exist, insert it
 					const insertResult = await pool.query(
-						'INSERT INTO songs (track_id, track, artist_id, duration, albumid) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+						'INSERT INTO tracks (track_id, track, artist_id, duration, albumid) VALUES ($1, $2, $3, $4, $5) RETURNING *',
 						[track_id, trackName, artistId, duration, albumId]
 					);
 
 					// Optionally, you can log the result or perform additional actions
-					console.log('Inserted track:', insertResult.rows[0]);
+					console.log('Inserted track:', trackName);
 				}
 			} catch (error) {
 				console.error('Error processing track:', error);
