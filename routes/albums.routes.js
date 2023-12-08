@@ -60,6 +60,7 @@ router.get('/album_ids', async (req, res, next) => {
 //====== USE ALBUMIDS FROM WHEREVER TO FETCH BULK API ALBUM DATA AND INSERT INTO ALBUM TABLE ========
 //===================================================================================================
 // This API call contains TRACK_IDS, since it's the SINGLE-ALBUM-API and uses a different function
+//the base route is /albums
 
 router.post('/with-trackids', async (req, res, next) => {
 	try {
@@ -111,28 +112,28 @@ router.post('/with-trackids', async (req, res, next) => {
 					const existingData = existingAlbum.rows[0];
 
 					if (
-						(existingData.label || label,
-						existingData.albumname || albumName,
-						existingData.artist || artist,
-						existingData.tracks || trackCount,
-						existingData.releasedate || releaseDate,
-						existingData.album_type || album_type,
+						existingData.label !== label ||
+						existingData.albumname !== albumName ||
+						existingData.artist !== artist ||
+						existingData.tracks !== trackCount ||
+						existingData.releasedate !== releaseDate ||
+						existingData.album_type !== album_type ||
 						arraysEqual(existingData.track_ids, track_ids)
 							? existingData.track_ids
-							: track_ids)
+							: track_ids
 					) {
 						// Update the existing record
 						const result = await pool.query(
 							'UPDATE albums SET label = $2, albumname = $3, artist = $4, tracks = $5, releasedate = $6, album_type = $7, track_ids = $8 WHERE albumid = $1 RETURNING *',
 							[
 								albumId,
-								updateData.label,
-								updateData.albumname,
-								updateData.artist,
-								updateData.tracks,
-								updateData.releasedate,
-								updateData.album_type,
-								updateData.track_ids,
+								label,
+								albumName,
+								artist,
+								trackCount,
+								releaseDate,
+								album_type,
+								track_ids,
 							]
 						);
 
@@ -202,27 +203,20 @@ router.post('/single-trackids/:id', async (req, res, next) => {
 			const existingData = existingAlbum.rows[0];
 
 			if (
-				(existingData.label || label,
-				existingData.albumname || albumName,
-				existingData.artist || artist,
-				existingData.tracks || trackCount,
-				existingData.releasedate || releaseDate,
-				existingData.album_type || album_type,
-				arraysEqual(existingData.track_ids, track_ids) ? existingData.track_ids : track_ids)
+				existingData.label !== label ||
+				existingData.albumname !== albumName ||
+				existingData.artist !== artist ||
+				existingData.tracks !== trackCount ||
+				existingData.releasedate !== releaseDate ||
+				existingData.album_type !== album_type ||
+				arraysEqual(existingData.track_ids, track_ids)
+					? existingData.track_ids
+					: track_ids
 			) {
 				// Update the existing record
 				const result = await pool.query(
 					'UPDATE albums SET label = $2, albumname = $3, artist = $4, tracks = $5, releasedate = $6, album_type = $7, track_ids = $8 WHERE albumid = $1 RETURNING *',
-					[
-						albumId,
-						updateData.label,
-						updateData.albumname,
-						updateData.artist,
-						updateData.tracks,
-						updateData.releasedate,
-						updateData.album_type,
-						updateData.track_ids,
-					]
+					[albumId, label, albumName, artist, tracks, releaseDate, album_type, track_ids]
 				);
 
 				console.log(`Updated album '${albumName}' by '${artist}':`, result.rows[0]);
