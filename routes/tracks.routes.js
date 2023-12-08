@@ -1,11 +1,17 @@
 const router = require('express').Router();
 const axios = require('axios');
 const pool = require('../db');
-const getMultipleTracks = require('../getTracks');
+const getTracksFromMultipleAlbums = require('../getTracks');
 
 let trackIDsArray = []; // Declare the array outside of the route handlers
 
-router.get('/', async (req, res, next) => {
+//the base route is /tracks
+
+//===================================================================================================
+//===========================  FETCH TRACKIDs FROM TRACKS TABLE =====================================
+//===================================================================================================
+
+router.get('/from-tracks', async (req, res, next) => {
 	try {
 		const queryResult = await pool.query('SELECT DISTINCT track_id FROM tracks');
 
@@ -23,13 +29,17 @@ router.get('/', async (req, res, next) => {
 	}
 });
 
-router.post('/', async (req, res, next) => {
+//===================================================================================================
+//== USE COLLECTED TRACKIDs FROM MULTIPLE ALBUMS AND FETCH API DATA AND INSERT IT IN TRACKS TABLE ===
+//===================================================================================================
+
+router.post('/multiple-albums', async (req, res, next) => {
 	const trackObjects = [];
 	const failedEntries = [];
 
 	try {
 		try {
-			const track = await getMultipleTracks(trackIDsArray);
+			const track = await getTracksFromMultipleAlbums(trackIDsArray);
 
 			trackObjects.push(track);
 			console.log('Preparing track Objects array');
@@ -111,6 +121,10 @@ router.post('/', async (req, res, next) => {
 		res.status(500).send('Internal Server Error');
 	}
 });
+
+//===================================================================================================
+//================== FETCH THE TRACKIDs THAT ARE IN THE ALBUM TABLE ALREADY =========================
+//===================================================================================================
 
 router.get('/from-albums', async (req, res, next) => {
 	//in the album table, all the trackids are in arrays in the track_ids column
