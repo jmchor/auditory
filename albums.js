@@ -78,17 +78,17 @@ async function getAlbums(array) {
 
 		return albumObjects;
 	} catch (error) {
-		const retryAfter = error.response.headers['retry-after'];
+		// const retryAfter = error.response.headers['retry-after'];
 
-		if (retryAfter) {
-			console.log(`Retry-After header found. Retry after ${retryAfter} seconds.`);
-			// Implement your retry logic here (e.g., wait for the specified duration and then retry)
-		}
+		// if (retryAfter) {
+		// 	console.log(`Retry-After header found. Retry after ${retryAfter} seconds.`);
+		// 	// Implement your retry logic here (e.g., wait for the specified duration and then retry)
+		// }
 		console.error('Error getting albums:', error.message);
 
-		return {
-			error: true,
-		};
+		// return {
+		// 	error: true,
+		// };
 	}
 }
 
