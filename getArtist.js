@@ -25,7 +25,7 @@ async function getArtist(id) {
 			return item.id;
 		});
 
-		const artistObject = { artist_id: id, artist: name, genres, albumids: albums, more_info: href };
+		const artistObject = { artist_id: id, artist: name, genres, album_ids: albums, more_info: href };
 
 		return artistObject;
 	} catch (error) {

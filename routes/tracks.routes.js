@@ -30,7 +30,7 @@ router.get('/from-tracks', async (req, res, next) => {
 });
 
 //===================================================================================================
-//== USE COLLECTED TRACKIDs FROM MULTIPLE ALBUMS AND FETCH API DATA AND INSERT IT IN TRACKS TABLE ===
+//== USE COLLECTED TRACKIDs FOR MULTIPLE ALBUMS AND FETCH API DATA AND INSERT IT IN TRACKS TABLE ===
 //===================================================================================================
 
 router.post('/multiple-albums', async (req, res, next) => {

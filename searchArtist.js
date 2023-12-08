@@ -19,16 +19,16 @@ async function searchArtist(query) {
 			}
 		);
 
-		const items = response.data.artists.items;
+		const dataPoints = response.data.artists.items;
 
 		// Filter results based on an exact match with the query
-		const artistObject = items
-			.filter((item) => item.name.toLowerCase() === query.toLowerCase())
-			.map((item) => ({
-				artist_id: item.id,
-				artist: item.name,
-				genres: item.genres,
-				more_info: item.href,
+		const artistObject = dataPoints
+			.filter((dataPoint) => dataPoint.name.toLowerCase() === query.toLowerCase())
+			.map((dataPoint) => ({
+				artist_id: dataPoint.id,
+				artist: dataPoint.name,
+				genres: dataPoint.genres,
+				more_info: dataPoint.href,
 			}));
 
 		if (artistObject.length === 0) {
@@ -36,9 +36,24 @@ async function searchArtist(query) {
 			return null;
 		}
 
-		// Get the artist's albums
-		const albums = await getArtist(artistObject[0].artist_id);
-		artistObject[0].albumids = albums.albumids;
+		// Get all albums for the artist
+
+		const allAlbums = await axios.get(
+			`https://api.spotify.com/v1/artists/${artistObject[0].artist_id}/albums`,
+			{
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
+			}
+		);
+
+		const { items } = allAlbums.data;
+
+		const albums = items.map((item) => {
+			return item.id;
+		});
+
+		artistObject[0].album_ids = albums;
 
 		return artistObject[0];
 	} catch (error) {
@@ -46,7 +61,5 @@ async function searchArtist(query) {
 		throw error; // Throw the error to be handled by the calling code
 	}
 }
-
-module.exports = searchArtist;
 
 module.exports = searchArtist;
