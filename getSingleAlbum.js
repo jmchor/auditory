@@ -48,6 +48,7 @@ async function getSingleAlbum(albumID) {
 			albumName: name,
 			releaseDate: formatReleaseDate(release_date),
 			artist: artists[0].name,
+			artist_Id: artists[0].id,
 			trackCount: total_tracks,
 			album_type: album_type,
 			track_ids: trackList,
