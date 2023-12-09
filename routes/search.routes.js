@@ -6,6 +6,9 @@ const searchArtist = require('../searchArtist');
 const arraysEqual = require('../arraysEqual');
 
 //===================================================================================================
+//========================================  POST ROUTES =============================================
+
+//===================================================================================================
 //===========================  SEARCH ARTIST BY QUERY AND INSERT IN DB ==============================
 //===================================================================================================
 // base route is /search
@@ -157,5 +160,77 @@ router.post('/multiple-artists', async (req, res, next) => {
 		res.status(500).json({ success: false, error: 'Internal Server Error' });
 	}
 });
+
+//===================================================================================================
+//=========================================  GET ROUTES =============================================
+
+//GET ARTIST
+
+router.get('/artist/:query', async (req, res) => {
+	try {
+		const { query } = req.params;
+
+		// Query the database for the artist using ILIKE for case-insensitive search
+		const result = await pool.query('SELECT * FROM artists WHERE artist ILIKE $1', [`%${query}%`]);
+
+		if (result.rows.length > 0) {
+			// Artist found, send the information as JSON
+			res.json({ success: true, artist: result.rows[0] });
+		} else {
+			// Artist not found
+			res.json({ success: false, message: 'Artist not found.' });
+		}
+	} catch (error) {
+		console.error('Error searching for artist:', error);
+		res.status(500).json({ success: false, message: 'Internal Server Error' });
+	}
+});
+
+//GET ALBUM
+
+//GET TRACK
+
+//GET ALL ALBUMS BY ARTIST
+router.get('/artist/:query/albums', async (req, res) => {
+	try {
+		const { query } = req.params;
+
+		// Query the database for the artist using ILIKE for case-insensitive search
+		const artistResult = await pool.query('SELECT * FROM artists WHERE artist ILIKE $1', [`%${query}%`]);
+
+		if (artistResult.rows.length === 0) {
+			// Artist not found
+			res.json({ success: false, message: 'Artist not found.' });
+			return;
+		}
+
+		const artist = artistResult.rows[0];
+		const { album_ids } = artist;
+
+		if (!album_ids || album_ids.length === 0) {
+			// Artist has no associated albums
+			res.json({ success: true, message: 'Artist has no associated albums.', albums: [] });
+			return;
+		}
+
+		// Query the albums table for the associated albums
+		const albumResult = await pool.query('SELECT * FROM albums WHERE albumid = ANY($1)', [album_ids]);
+
+		// Loop through the album information and create a simplified JSON object
+		const simplifiedAlbums = albumResult.rows.map((album) => ({
+			albumName: album.albumname,
+			releaseDate: album.releasedate,
+			trackCount: album.tracks,
+		}));
+
+		// Send the simplified information as JSON
+		res.json({ success: true, artist, albums: simplifiedAlbums });
+	} catch (error) {
+		console.error('Error searching for artist albums:', error);
+		res.status(500).json({ success: false, message: 'Internal Server Error' });
+	}
+});
+
+//GET ALL TRACKS BY ALBUM
 
 module.exports = router;
