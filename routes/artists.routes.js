@@ -10,7 +10,7 @@ router.post('/single/:id', async (req, res, next) => {
 	try {
 		const artistObject = await getArtists(id);
 
-		const { artist_id, artist, genres, albumids, more_info } = artistObject;
+		const { artist_id, artist, genres, album_ids, more_info } = artistObject;
 
 		// Check if the artist already exists in the database
 		const existingArtist = await pool.query('SELECT * FROM artists WHERE artist_id = $1', [artist_id]);
@@ -26,14 +26,14 @@ router.post('/single/:id', async (req, res, next) => {
 				!genres ||
 				!existingInfo.genres ||
 				!arraysEqual(existingInfo.genres, genres) || // Check if arrays are equal
-				!albumids ||
+				!album_ids ||
 				!existingInfo.albumids ||
 				!arraysEqual(existingInfo.albumids, albumids) // Check if arrays are equal
 			) {
 				// Update the table record with additional info
 				const updateResult = await pool.query(
 					'UPDATE artists SET artist = $2, more_info = $3, genres = $4, album_ids = $5 WHERE artist_id = $1 RETURNING *',
-					[artist_id, artist, more_info, genres, albumids]
+					[artist_id, artist, more_info, genres, album_ids]
 				);
 
 				console.log('Updated artist info:', updateResult.rows[0]);
@@ -49,8 +49,8 @@ router.post('/single/:id', async (req, res, next) => {
 		// If the artist doesn't exist, insert it
 
 		const result = await pool.query(
-			'INSERT INTO artists (artist, artist_id, genres, albumids, more_info) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-			[artist, artist_id, genres, albumids, more_info]
+			'INSERT INTO artists (artist, artist_id, genres, album_ids, more_info) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+			[artist, artist_id, genres, album_ids, more_info]
 		);
 		// Optionally, you can log the result or perform additional actions
 		console.log('Inserted artist:', result.rows[0]);
