@@ -62,12 +62,16 @@ router.get('/for/:artist_id', async (req, res, next) => {
 //the base route is /albums
 
 router.post('/with-trackids', async (req, res, next) => {
+	if (req.body) {
+		albumIDsArray = req.body;
+	}
+
+	console.log('albumIDsArray:', albumIDsArray);
+
 	try {
 		const albumObjects = [];
 		const delayDuration = 1000;
 		let iterationCounter = 0;
-
-		console.log('albumIDsArray:', albumIDsArray);
 
 		// Fetch albums and push them to albumObjects
 		for (const albumID of albumIDsArray) {
