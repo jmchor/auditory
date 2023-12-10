@@ -37,6 +37,10 @@ router.post('/multiple-albums', async (req, res, next) => {
 	const trackObjects = [];
 	const failedEntries = [];
 
+	if (req.body) {
+		trackIDsArray = req.body;
+	}
+
 	try {
 		try {
 			const track = await getTracksFromMultipleAlbums(trackIDsArray);
@@ -146,5 +150,24 @@ router.get('/from-albums', async (req, res, next) => {
 		res.status(500).send('Internal Server Error');
 	}
 });
+
+router.get('/from-albums/:artistID', async (req, res, next) => {
+	const { artistID } = req.params;
+
+	try {
+		const queryResult = await pool.query('SELECT track_ids FROM albums WHERE artist_id = $1', [artistID]);
+
+		// Extract trackIDs from the query result
+		const trackIDsArray = queryResult.rows.map((row) => row.track_ids).flat();
+
+		// Respond with the trackIDs array
+		res.json(trackIDsArray);
+	} catch (error) {
+		console.error('Error fetching trackIDs:', error);
+		res.status(500).send('Internal Server Error');
+	}
+});
+
+module.exports = router;
 
 module.exports = router;
