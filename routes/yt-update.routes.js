@@ -5,10 +5,10 @@ const pool = require('../db');
 const searchYouTubeVideos = require('../yt-search');
 
 //===================================================================================================
-//===========================  SEARCH TRACK AND ADD YT URL ==========================================
+//===========================  SEARCH TRACK BY ID AND ADD YT URL ====================================
 //===================================================================================================
 
-router.get('/single-track/:id', async (req, res, next) => {
+router.post('/single-track/:id', async (req, res, next) => {
 	try {
 		const id = req.params.id; // Corrected way to get the parameter value
 
@@ -20,7 +20,7 @@ router.get('/single-track/:id', async (req, res, next) => {
 		const youtubeURL = await searchYouTubeVideos(query);
 
 		const updateResult = await pool.query(
-			'UPDATE songs SET youtube_url = $1 WHERE track_id = $2 RETURNING *',
+			'UPDATE tracks SET youtube_url = $1 WHERE track_id = $2 RETURNING *',
 			[youtubeURL, id]
 		);
 
