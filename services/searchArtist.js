@@ -8,7 +8,6 @@ async function searchArtist(query) {
 	try {
 		// Encode the query to replace spaces with %20
 		const encodedQuery = encodeURIComponent(query);
-		console.log(encodedQuery);
 
 		const response = await axios.get(
 			`https://api.spotify.com/v1/search?q=${encodedQuery}&type=artist&limit=10`,
@@ -28,7 +27,7 @@ async function searchArtist(query) {
 				artist_id: dataPoint.id,
 				artist: dataPoint.name,
 				genres: dataPoint.genres,
-				more_info: dataPoint.href,
+				image: dataPoint.images[0].url,
 			}));
 
 		if (artistObject.length === 0) {
