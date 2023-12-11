@@ -10,7 +10,7 @@ router.post('/single/:id', async (req, res, next) => {
 	try {
 		const artistObject = await getArtists(id);
 
-		const { artist_id, artist, genres, album_ids, more_info } = artistObject;
+		const { artist_id, artist, genres, album_ids, image } = artistObject;
 
 		// Check if the artist already exists in the database
 		const existingArtist = await pool.query('SELECT * FROM artists WHERE artist_id = $1', [artist_id]);
@@ -21,19 +21,19 @@ router.post('/single/:id', async (req, res, next) => {
 
 			// Check if any additional info is missing and needs to be updated
 			if (
-				existingInfo.more_info !== more_info ||
+				existingInfo.image !== image ||
 				existingInfo.artist !== artist ||
 				!genres ||
 				!existingInfo.genres ||
 				!arraysEqual(existingInfo.genres, genres) || // Check if arrays are equal
 				!album_ids ||
-				!existingInfo.albumids ||
-				!arraysEqual(existingInfo.albumids, albumids) // Check if arrays are equal
+				!existingInfo.album_ids ||
+				!arraysEqual(existingInfo.album_ids, album_ids) // Check if arrays are equal
 			) {
 				// Update the table record with additional info
 				const updateResult = await pool.query(
-					'UPDATE artists SET artist = $2, more_info = $3, genres = $4, album_ids = $5 WHERE artist_id = $1 RETURNING *',
-					[artist_id, artist, more_info, genres, album_ids]
+					'UPDATE artists SET artist = $2, image = $3, genres = $4, album_ids = $5 WHERE artist_id = $1 RETURNING *',
+					[artist_id, artist, image, genres, album_ids]
 				);
 
 				console.log('Updated artist info:', updateResult.rows[0]);
@@ -49,8 +49,8 @@ router.post('/single/:id', async (req, res, next) => {
 		// If the artist doesn't exist, insert it
 
 		const result = await pool.query(
-			'INSERT INTO artists (artist, artist_id, genres, album_ids, more_info) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-			[artist, artist_id, genres, album_ids, more_info]
+			'INSERT INTO artists (artist, artist_id, genres, album_ids, image) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+			[artist, artist_id, genres, album_ids, image]
 		);
 		// Optionally, you can log the result or perform additional actions
 		console.log('Inserted artist:', result.rows[0]);
@@ -63,20 +63,29 @@ router.post('/single/:id', async (req, res, next) => {
 
 //get artists by ID and populate the artists table
 
-router.get('/bulk', async (req, res, next) => {
+router.post('/bulk', async (req, res, next) => {
 	try {
-		const allArtists = await pool.query('SELECT DISTINCT artist_id FROM tracks');
+		const allArtists = await pool.query('SELECT DISTINCT artist_id FROM artists');
 		const artistIDs = allArtists.rows.map((row) => row.artist_id);
 
 		const artistObjects = [];
 		const failedEntries = [];
 
-		for (const artistID of artistIDs) {
+		const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+		for (let i = 0; i < artistIDs.length; i++) {
+			const artistID = artistIDs[i];
 			try {
 				const artist = await getArtists(artistID);
 				// Perform operations with the fetched artist data
 				artistObjects.push(artist);
 				console.log('Pushing artist object:', artist.artist);
+
+				// Check if the current iteration is a multiple of 10
+				if ((i + 1) % 10 === 0) {
+					console.log('Waiting for 2 seconds...');
+					await delay(2000); // Wait for 2 seconds
+				}
 			} catch (error) {
 				console.error('Error fetching or processing artist:', error);
 				failedEntries.push({ artistID, error: error.message });
@@ -86,7 +95,7 @@ router.get('/bulk', async (req, res, next) => {
 
 		for (const artistObject of artistObjects) {
 			try {
-				const { artist_id, artist, genres, albumids, more_info } = artistObject;
+				const { artist_id, artist, genres, album_ids, image } = artistObject;
 
 				// Check if the artist already exists in the database
 				const existingArtist = await pool.query('SELECT * FROM artists WHERE artist_id = $1', [
@@ -99,17 +108,17 @@ router.get('/bulk', async (req, res, next) => {
 
 					// Check if any additional info is missing and needs to be updated
 					if (
-						existingInfo.more_info !== more_info ||
+						existingInfo.image !== image ||
 						existingInfo.artist !== artist ||
 						!arraysEqual(existingInfo.genres, genres) || // Check if arrays are equal
-						!arraysEqual(existingInfo.albumids, albumids) // Check if arrays are equal
+						!arraysEqual(existingInfo.album_ids, album_ids) // Check if arrays are equal
 					) {
 						// Update the table record with additional info
 						const updatedGenres = genres.length > 0 ? genres : ['none']; // Insert 'none' if genres is empty
-						const updatedAlbumIDs = albumids.length > 0 ? albumids : ['none']; // Insert 'none' if albumids is empty
+						const updatedAlbumIDs = album_ids.length > 0 ? album_ids : ['none']; // Insert 'none' if albumids is empty
 						const updateResult = await pool.query(
-							'UPDATE artists SET artist = $2, more_info = $3, genres = $4, album_ids = $5 WHERE artist_id = $1 RETURNING *',
-							[artist_id, artist, more_info, updatedGenres, updatedAlbumIDs]
+							'UPDATE artists SET artist = $2, image = $3, genres = $4, album_ids = $5 WHERE artist_id = $1 RETURNING *',
+							[artist_id, artist, image, updatedGenres, updatedAlbumIDs]
 						);
 
 						console.log('Updated artist info:', updateResult.rows[0]);
@@ -124,15 +133,15 @@ router.get('/bulk', async (req, res, next) => {
 
 				// If the artist doesn't exist, insert it
 				const insertGenres = genres.length > 0 ? genres : ['none']; // Insert 'none' if genres is empty
-				const insertAlbumIDs = albumids.length > 0 ? albumids : ['none']; // Insert 'none' if albumids is empty
+				const insertAlbumIDs = album_ids.length > 0 ? album_ids : ['none']; // Insert 'none' if albumids is empty
 				const result = await pool.query(
-					'INSERT INTO artists (artist, artist_id, genres, albumids) VALUES ($artist, $artist_id, $genres, $albumids, $more_info) RETURNING *',
+					'INSERT INTO artists (artist, artist_id, genres, album_ids) VALUES ($artist, $artist_id, $genres, $album_ids, $image) RETURNING *',
 					{
 						$artist: artist,
 						$artist_id: artist_id,
 						$genres: genres,
-						$albumids: albumids,
-						$more_info: more_info,
+						$album_ids: album_ids,
+						$image: image,
 					}
 				);
 
