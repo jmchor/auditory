@@ -11,7 +11,7 @@ async function getArtist(id) {
 			},
 		});
 
-		const { name, genres, href } = response.data;
+		const { name, genres, images } = response.data;
 
 		const allAlbums = await axios.get(`https://api.spotify.com/v1/artists/${id}/albums`, {
 			headers: {
@@ -25,11 +25,11 @@ async function getArtist(id) {
 			return item.id;
 		});
 
-		const artistObject = { artist_id: id, artist: name, genres, album_ids: albums, more_info: href };
+		const artistObject = { artist_id: id, artist: name, genres, album_ids: albums, image: images[0].url };
 
 		return artistObject;
 	} catch (error) {
-		console.error('Error getting playlists:', error.message);
+		console.error('Error getting artist:', error.message);
 		return null;
 	}
 }
