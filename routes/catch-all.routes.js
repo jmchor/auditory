@@ -42,7 +42,8 @@ router.post('/:query', async (req, res, next) => {
 		// Make a request to fetch album information using album_ids
 		const albumResponse = await axios.post(`${api}/albums/with-trackids`, artistObject.album_ids);
 
-		// Process albumResponse as needed
+		//Wait for 3 seconds to avoid rate limiting
+		await new Promise((resolve) => setTimeout(resolve, 3000));
 
 		// Now, make a request to fetch tracks from albums
 		const trackResponse = await axios.get(`${api}/tracks/from-albums/${artistObject.artist_id}`);
