@@ -319,7 +319,7 @@ router.post('/from-artists', async (req, res, next) => {
 		// Fetch albums and push them to albumObjects
 
 		try {
-			const album = await getAlbums(albumIDsArray);
+			const album = await getAlbums(albumIDsFromArtistsArray);
 
 			albumObjects.push(album);
 			console.log('Preparing album Objects array');
