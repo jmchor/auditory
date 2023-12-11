@@ -7,7 +7,7 @@ const searchArtist = require('../services/searchArtist');
 const searchTrack = require('../services/searchTrack');
 const getAlbums = require('../services/getAlbums');
 const getTracksFromMultipleAlbums = require('../services/getTracks');
-const api = process.env.ORIGIN;
+const api = process.env.SERVER_URL;
 
 let trackIDsArray = []; // Declare the array outside of the route handlers
 
@@ -37,6 +37,7 @@ router.post('/:query', async (req, res, next) => {
 			artist: artistResponse.data.artist.artist,
 			genres: artistResponse.data.artist.genres,
 			album_ids: artistResponse.data.artist.album_ids,
+			image: artistResponse.data.artist.images[0].url,
 		};
 
 		// Make a request to fetch album information using album_ids
