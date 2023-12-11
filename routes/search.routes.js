@@ -25,7 +25,6 @@ router.post('/single-track/:query', async (req, res, next) => {
 		}
 
 		const { track_id, track, duration, albumid, artist_id } = result.trackObject[0];
-
 		// Check if the track already exists in the database
 		const existingTrack = await pool.query('SELECT * FROM tracks WHERE track_id = $1', [track_id]);
 
