@@ -54,13 +54,14 @@ async function getAlbums(array) {
 					!album.release_date ||
 					!album.artists ||
 					!album.total_tracks ||
-					!album.album_type
+					!album.album_type ||
+					!album.images
 				) {
 					console.error('Skipping invalid album:', album);
 					continue;
 				}
 
-				const { id, name, release_date, artists, total_tracks, album_type, label } = album;
+				const { id, name, release_date, artists, total_tracks, album_type, images } = album;
 				const albumObject = {
 					albumId: id,
 					albumName: name,
@@ -68,7 +69,7 @@ async function getAlbums(array) {
 					artistId: artists[0].id,
 					trackCount: total_tracks,
 					album_type: album_type,
-					label: album.label,
+					image: images[0].url,
 				};
 
 				albumObjects.push(albumObject);

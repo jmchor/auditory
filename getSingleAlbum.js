@@ -37,7 +37,7 @@ async function getSingleAlbum(albumID) {
 			return null;
 		}
 
-		const { id, name, release_date, artists, total_tracks, album_type, tracks, label } = album;
+		const { id, name, release_date, artists, total_tracks, album_type, tracks, images } = album;
 
 		const trackList = tracks.items.map((item) => {
 			return item.id;
@@ -52,7 +52,7 @@ async function getSingleAlbum(albumID) {
 			trackCount: total_tracks,
 			album_type: album_type,
 			track_ids: trackList,
-			label: label,
+			image: images[0].url,
 		};
 
 		return albumObject;
