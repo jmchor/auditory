@@ -236,6 +236,47 @@ router.post('/single-artist/:query', async (req, res, next) => {
 //===================================================================================================
 //=========================================  GET ROUTES =============================================
 
+//GET ARTIST BY GENRE
+
+router.get('/genre/all', async (req, res) => {
+	try {
+		const result = await pool.query('SELECT genres FROM artists');
+
+		if (result.rows.length > 0) {
+			// Artist found, send the information as JSON
+			const genres = result.rows.map((row) => row.genres).flat();
+
+			res.json({ success: true, genres: genres });
+		} else {
+			// Artist not found
+			res.json({ success: false, message: 'Artist not found.' });
+		}
+	} catch (error) {
+		console.error('Error searching for artist:', error);
+		res.status(500).json({ success: false, message: 'Internal Server Error' });
+	}
+});
+
+router.get('/genre/:query', async (req, res) => {
+	try {
+		const { query } = req.params;
+
+		// Query the database for the artist using ANY for array comparison
+		const result = await pool.query('SELECT * FROM artists WHERE $1 = ANY(genres)', [query]);
+
+		if (result.rows.length > 0) {
+			// Artists found, send the information as JSON
+			res.json({ success: true, artists: result.rows });
+		} else {
+			// No matching artists found
+			res.json({ success: false, message: 'No matching artists found.' });
+		}
+	} catch (error) {
+		console.error('Error searching for artists by genre:', error);
+		res.status(500).json({ success: false, message: 'Internal Server Error' });
+	}
+});
+
 //GET ARTIST
 
 router.get('/artist/:query', async (req, res) => {
