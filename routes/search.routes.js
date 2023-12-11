@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const axios = require('axios');
 const pool = require('../db');
-const api = process.env.ORIGIN;
+const api = process.env.SERVER_URL;
 
 const searchArtist = require('../services/searchArtist');
 const arraysEqual = require('../services/arraysEqual');
@@ -89,7 +89,7 @@ router.post('/single-artist/:query', async (req, res, next) => {
 			return;
 		}
 
-		const { artist_id, artist, genres, more_info, album_ids } = result;
+		const { artist_id, artist, genres, image, album_ids } = result;
 
 		// Check if the artist already exists in the database
 		const existingArtist = await pool.query('SELECT * FROM artists WHERE artist_id = $1', [artist_id]);
@@ -100,7 +100,7 @@ router.post('/single-artist/:query', async (req, res, next) => {
 
 			// Check if any additional info is missing and needs to be updated
 			if (
-				existingInfo.more_info !== more_info ||
+				existingInfo.image !== image ||
 				existingInfo.artist !== artist ||
 				!arraysEqual(existingInfo.genres, genres) || // Check if arrays are equal
 				!arraysEqual(existingInfo.album_ids, album_ids) // Check if arrays are equal
@@ -109,8 +109,8 @@ router.post('/single-artist/:query', async (req, res, next) => {
 				const updatedGenres = genres.length > 0 ? genres : ['none']; // Insert 'none' if genres is empty
 				const updatedAlbumIDs = album_ids.length > 0 ? album_ids : ['none']; // Insert 'none' if album_ids is empty
 				const updateResult = await pool.query(
-					'UPDATE artists SET artist = $2, more_info = $3, genres = $4, album_ids = $5 WHERE artist_id = $1 RETURNING *',
-					[artist_id, artist, more_info, updatedGenres, updatedAlbumIDs]
+					'UPDATE artists SET artist = $2, image = $3, genres = $4, album_ids = $5 WHERE artist_id = $1 RETURNING *',
+					[artist_id, artist, image, updatedGenres, updatedAlbumIDs]
 				);
 
 				console.log('Updated artist info:', updateResult.rows[0]);
@@ -123,8 +123,8 @@ router.post('/single-artist/:query', async (req, res, next) => {
 			const insertGenres = genres.length > 0 ? genres : ['none']; // Insert 'none' if genres is empty
 			const insertAlbumIDs = album_ids.length > 0 ? album_ids : ['none']; // Insert 'none' if album_ids is empty
 			const insertResult = await pool.query(
-				'INSERT INTO artists (artist, artist_id, genres, more_info, album_ids) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-				[artist, artist_id, insertGenres, more_info, insertAlbumIDs]
+				'INSERT INTO artists (artist, artist_id, genres, image, album_ids) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+				[artist, artist_id, insertGenres, image, insertAlbumIDs]
 			);
 
 			// Optionally, you can log the result or perform additional actions
@@ -168,7 +168,7 @@ router.post('/single-artist/:query', async (req, res, next) => {
 // 					continue;
 // 				}
 
-// 				const { artist_id, artist, genres, more_info, albumids } = result;
+// 				const { artist_id, artist, genres, image, albumids } = result;
 
 // 				// Check if the artist already exists in the database
 // 				const existingArtist = await pool.query('SELECT * FROM artists WHERE artist_id = $1', [
@@ -181,7 +181,7 @@ router.post('/single-artist/:query', async (req, res, next) => {
 
 // 					// Check if any additional info is missing and needs to be updated
 // 					if (
-// 						existingInfo.more_info !== more_info ||
+// 						existingInfo.image !== image ||
 // 						existingInfo.artist !== artist ||
 // 						!arraysEqual(existingInfo.genres, genres) || // Check if arrays are equal
 // 						!arraysEqual(existingInfo.albumids, albumids) // Check if arrays are equal
@@ -190,8 +190,8 @@ router.post('/single-artist/:query', async (req, res, next) => {
 // 						const updatedGenres = genres.length > 0 ? genres : ['none']; // Insert 'none' if genres is empty
 // 						const updatedAlbumIDs = albumids.length > 0 ? albumids : ['none']; // Insert 'none' if albumids is empty
 // 						const updateResult = await pool.query(
-// 							'UPDATE artists SET artist = $2, more_info = $3, genres = $4, album_ids = $5 WHERE artist_id = $1 RETURNING *',
-// 							[artist_id, artist, more_info, updatedGenres, updatedAlbumIDs]
+// 							'UPDATE artists SET artist = $2, image = $3, genres = $4, album_ids = $5 WHERE artist_id = $1 RETURNING *',
+// 							[artist_id, artist, image, updatedGenres, updatedAlbumIDs]
 // 						);
 
 // 						console.log('Updated artist info:', updateResult.rows[0]);
@@ -206,8 +206,8 @@ router.post('/single-artist/:query', async (req, res, next) => {
 // 					const insertGenres = genres.length > 0 ? genres : ['none']; // Insert 'none' if genres is empty
 // 					const insertAlbumIDs = albumids.length > 0 ? albumids : ['none']; // Insert 'none' if albumids is empty
 // 					const insertResult = await pool.query(
-// 						'INSERT INTO artists (artist, artist_id, genres, more_info, albumids) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-// 						[artist, artist_id, insertGenres, more_info, insertAlbumIDs]
+// 						'INSERT INTO artists (artist, artist_id, genres, image, albumids) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+// 						[artist, artist_id, insertGenres, image, insertAlbumIDs]
 // 					);
 
 // 					// Optionally, you can log the result or perform additional actions
