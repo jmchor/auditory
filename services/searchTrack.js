@@ -50,7 +50,7 @@ async function searchTrack(query) {
 			artist_id: artistData.id,
 			artist: artistData.name,
 			genres: artistData.genres,
-			more_info: artistData.href,
+			image: artistData.images[0].url,
 		};
 
 		return { trackObject, artistObject };
