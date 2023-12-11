@@ -4,7 +4,7 @@ const getAccessToken = require('./accessToken');
 async function getAlbums(array) {
 	const accessToken = await getAccessToken();
 
-	const MAX_REQUESTS_PER_SECOND = 5;
+	const MAX_REQUESTS_PER_SECOND = 10;
 	const DELAY_BETWEEN_REQUESTS = 1000 / MAX_REQUESTS_PER_SECOND; // Milliseconds
 
 	function formatReleaseDate(releaseDate) {
