@@ -245,7 +245,7 @@ router.get('/genre/all', async (req, res) => {
 			// Artist found, send the information as JSON
 			const genres = result.rows.map((row) => row.genres).flat();
 
-			res.json({ success: true, genres: genres });
+			res.json({ success: true, response: genres });
 		} else {
 			// Artist not found
 			res.json({ success: false, message: 'Artist not found.' });
@@ -265,7 +265,7 @@ router.get('/genre/:query', async (req, res) => {
 
 		if (result.rows.length > 0) {
 			// Artists found, send the information as JSON
-			res.json({ success: true, artists: result.rows });
+			res.json({ success: true, response: result.rows });
 		} else {
 			// No matching artists found
 			res.json({ success: false, message: 'No matching artists found.' });
@@ -287,7 +287,7 @@ router.get('/artist/:query', async (req, res) => {
 
 		if (result.rows.length > 0) {
 			// Artist found, send the information as JSON
-			res.json({ success: true, artist: result.rows[0] });
+			res.json({ success: true, response: result.rows[0] });
 		} else {
 			// Artist not found
 			res.json({ success: false, message: 'Artist not found.' });
@@ -321,7 +321,7 @@ router.get('/album/:query', async (req, res) => {
 
 		const tracksArray = trackResult.rows;
 
-		res.json({ success: true, album: album, tracks: tracksArray });
+		res.json({ success: true, response: album, tracks: tracksArray });
 	} catch (error) {}
 });
 
@@ -336,7 +336,7 @@ router.get('/track/:query', async (req, res) => {
 
 		if (result.rows.length > 0) {
 			// Artist found, send the information as JSON
-			res.json({ success: true, track: result.rows[0] });
+			res.json({ success: true, response: result.rows[0] });
 		} else {
 			// Artist not found
 			res.json({ success: false, message: 'Track not found.' });
@@ -378,10 +378,11 @@ router.get('/artist/:query/albums', async (req, res) => {
 			albumName: album.albumname,
 			releaseDate: album.releasedate,
 			trackCount: album.tracks,
+			image: album.image,
 		}));
 
 		// Send the simplified information as JSON
-		res.json({ success: true, artist, albums: simplifiedAlbums });
+		res.json({ success: true, response: artist, albums: simplifiedAlbums });
 	} catch (error) {
 		console.error('Error searching for artist albums:', error);
 		res.status(500).json({ success: false, message: 'Internal Server Error' });
