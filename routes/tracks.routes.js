@@ -169,5 +169,3 @@ router.get('/from-albums/:artistID', async (req, res, next) => {
 });
 
 module.exports = router;
-
-module.exports = router;

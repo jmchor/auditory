@@ -3,7 +3,7 @@ const axios = require('axios');
 const playListTracks = require('../services/getPlaylistData');
 const pool = require('../db');
 
-router.get('/', async (req, res, next) => {
+router.post('/', async (req, res, next) => {
 	try {
 		const allTracks = await playListTracks();
 		// console.log(allTracks[0])
