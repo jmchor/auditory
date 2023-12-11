@@ -3,9 +3,9 @@ const axios = require('axios');
 const pool = require('../db');
 const api = process.env.ORIGIN;
 
-const searchArtist = require('../searchArtist');
-const arraysEqual = require('../arraysEqual');
-const searchTrack = require('../searchTrack');
+const searchArtist = require('../services/searchArtist');
+const arraysEqual = require('../services/arraysEqual');
+const searchTrack = require('../services/searchTrack');
 
 //===================================================================================================
 //========================================  POST ROUTES =============================================

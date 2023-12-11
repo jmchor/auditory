@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const axios = require('axios');
 const pool = require('../db');
-const getTracksFromMultipleAlbums = require('../getTracks');
+const getTracksFromMultipleAlbums = require('../services/getTracks');
 
 let trackIDsArray = []; // Declare the array outside of the route handlers
 

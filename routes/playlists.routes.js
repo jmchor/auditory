@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const axios = require('axios');
-const playListTracks = require('../service');
+const playListTracks = require('../services/getPlaylistData');
 const pool = require('../db');
 
 router.get('/', async (req, res, next) => {

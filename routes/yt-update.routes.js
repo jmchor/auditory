@@ -2,7 +2,7 @@ const router = require('express').Router();
 const axios = require('axios');
 const pool = require('../db');
 
-const searchYouTubeVideos = require('../yt-search');
+const searchYouTubeVideos = require('../services/yt-search');
 
 //===================================================================================================
 //===========================  SEARCH TRACK BY ID AND ADD YT URL ====================================

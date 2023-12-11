@@ -1,9 +1,9 @@
 const router = require('express').Router();
 const axios = require('axios');
 const pool = require('../db');
-const getAlbums = require('../albums');
-const getSingleAlbum = require('../getSingleAlbum');
-const arraysEqual = require('../arraysEqual');
+const getAlbums = require('../services/getAlbums');
+const getSingleAlbum = require('../services/getSingleAlbum');
+const arraysEqual = require('../services/arraysEqual');
 
 let albumIDsArray = []; // Declare the array outside of the route handlers
 let albumIDsFromArtistsArray = [];

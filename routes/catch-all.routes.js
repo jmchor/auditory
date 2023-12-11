@@ -1,12 +1,12 @@
 const router = require('express').Router();
 const axios = require('axios');
 const pool = require('../db');
-const getArtists = require('../getArtist');
-const arraysEqual = require('../arraysEqual');
-const searchArtist = require('../searchArtist');
-const searchTrack = require('../searchTrack');
-const getAlbums = require('../albums');
-const getTracksFromMultipleAlbums = require('../getTracks');
+const getArtists = require('../services/getArtist');
+const arraysEqual = require('../services/arraysEqual');
+const searchArtist = require('../services/searchArtist');
+const searchTrack = require('../services/searchTrack');
+const getAlbums = require('../services/getAlbums');
+const getTracksFromMultipleAlbums = require('../services/getTracks');
 const api = process.env.ORIGIN;
 
 let trackIDsArray = []; // Declare the array outside of the route handlers

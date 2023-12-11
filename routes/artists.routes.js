@@ -1,8 +1,8 @@
 const router = require('express').Router();
 const axios = require('axios');
 const pool = require('../db');
-const getArtists = require('../getArtist');
-const arraysEqual = require('../arraysEqual');
+const getArtists = require('../services/getArtist');
+const arraysEqual = require('../services/arraysEqual');
 
 router.post('/single/:id', async (req, res, next) => {
 	const id = req.params.id;
