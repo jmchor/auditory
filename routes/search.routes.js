@@ -321,7 +321,7 @@ router.get('/album/:query', async (req, res) => {
 
 		const tracksArray = trackResult.rows;
 
-		const response = { ...album, tracks: tracksArray };
+		const response = { ...album, tracklist: tracksArray };
 
 		res.json({ success: true, response: response });
 	} catch (error) {}
