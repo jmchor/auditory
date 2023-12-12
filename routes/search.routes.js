@@ -315,13 +315,15 @@ router.get('/album/:query', async (req, res) => {
 
 		const album = albumResult.rows[0];
 
-		const { albumid, albumname, releasedate, tracks } = album;
+		const { albumid } = album;
 
 		const trackResult = await pool.query('SELECT * FROM tracks WHERE albumid = $1', [albumid]);
 
 		const tracksArray = trackResult.rows;
 
-		res.json({ success: true, response: album, tracks: tracksArray });
+		const response = { ...album, tracks: tracksArray };
+
+		res.json({ success: true, response: response });
 	} catch (error) {}
 });
 
@@ -336,7 +338,23 @@ router.get('/track/:query', async (req, res) => {
 
 		if (result.rows.length > 0) {
 			// Artist found, send the information as JSON
-			res.json({ success: true, response: result.rows[0] });
+
+			const track = result.rows[0];
+			const { albumid, artist_id } = track;
+
+			const artistResult = await pool.query('SELECT * FROM artists WHERE artist_id = $1', [
+				artist_id,
+			]);
+
+			const albumResult = await pool.query('SELECT * FROM albums WHERE albumid = $1', [albumid]);
+
+			const response = {
+				artist: artistResult.rows[0].artist,
+				...track,
+				album: albumResult.rows[0].albumname,
+			};
+
+			res.json({ success: true, response: response });
 		} else {
 			// Artist not found
 			res.json({ success: false, message: 'Track not found.' });
@@ -381,8 +399,10 @@ router.get('/artist/:query/albums', async (req, res) => {
 			image: album.image,
 		}));
 
+		const response = { ...artist, albums: simplifiedAlbums };
+
 		// Send the simplified information as JSON
-		res.json({ success: true, response: artist, albums: simplifiedAlbums });
+		res.json({ success: true, response: response });
 	} catch (error) {
 		console.error('Error searching for artist albums:', error);
 		res.status(500).json({ success: false, message: 'Internal Server Error' });
