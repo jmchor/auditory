@@ -397,6 +397,7 @@ router.get('/artist/:query/albums', async (req, res) => {
 			releaseDate: album.releasedate,
 			trackCount: album.tracks,
 			image: album.image,
+			albumId: album.albumid,
 		}));
 
 		const response = { ...artist, albums: simplifiedAlbums };
