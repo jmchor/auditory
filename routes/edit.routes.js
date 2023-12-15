@@ -10,10 +10,8 @@ const getTracksFromMultipleAlbums = require('../services/getTracks');
 const api = process.env.SERVER_URL;
 
 router.put('/artist/:id', async (req, res) => {
-	const { artist, genres, album_ids, image, harddrive } = req.body;
+	const { artistName, genres, onHarddrive } = req.body;
 	const { id } = req.params;
-
-	console.log(artist, image, harddrive);
 
 	try {
 		// Fetch the existing artist from the database
@@ -27,15 +25,8 @@ router.put('/artist/:id', async (req, res) => {
 
 		// Update the entire record with the information from req.body
 		const updatedArtist = await pool.query(
-			'UPDATE artists SET artist = $1, genres = $2, album_ids = $3, image = $4, harddrive = $5 WHERE artist_id = $6 RETURNING *',
-			[
-				artist || existingArtist.artist,
-				genres || existingArtist.genres,
-				album_ids || existingArtist.album_ids,
-				image || existingArtist.image,
-				harddrive || existingArtist.harddrive,
-				id,
-			]
+			'UPDATE artists SET artist = $1, genres = $2,  harddrive = $3 WHERE artist_id = $4 RETURNING *',
+			[artistName, genres, onHarddrive, id]
 		);
 
 		res.json(updatedArtist.rows[0]);
@@ -82,8 +73,10 @@ router.put('/track/:id', async (req, res) => {
 });
 
 router.put('/album/:id', async (req, res) => {
-	const { albumname, artist_id, artist, tracks, releasedate, album_type, track_ids, image, harddrive } = req.body;
+	const { onHarddrive } = req.body;
 	const { id } = req.params;
+
+	console.log(onHarddrive, id);
 
 	try {
 		// Fetch the existing artist from the database
@@ -97,19 +90,8 @@ router.put('/album/:id', async (req, res) => {
 
 		// Update the entire record with the information from req.body
 		const updatedAlbum = await pool.query(
-			'UPDATE albums SET album = $1, artist = $2, genres = $3, image = $4, harddrive = $5 WHERE albumid = $6 RETURNING *',
-			[
-				albumname || existingAlbum.album,
-				artist_id || existingAlbum.artist_id,
-				artist || existingAlbum.artist,
-				tracks || existingAlbum.tracks,
-				releasedate || existingAlbum.releasedate,
-				album_type || existingAlbum.album_type,
-				track_ids || existingAlbum.track_ids,
-				image || existingAlbum.image,
-				harddrive || existingAlbum.harddrive,
-				id,
-			]
+			'UPDATE albums SET harddrive = $1 WHERE albumid = $2 RETURNING *',
+			[onHarddrive, id]
 		);
 
 		res.json(updatedAlbum.rows[0]);
