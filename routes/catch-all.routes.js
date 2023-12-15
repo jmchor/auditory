@@ -32,12 +32,13 @@ router.post('/:query', async (req, res, next) => {
 
 	try {
 		const artistResponse = await axios.post(`${api}/search/single-artist/${query}`);
+
 		const artistObject = {
 			artist_id: artistResponse.data.artist.artist_id,
 			artist: artistResponse.data.artist.artist,
 			genres: artistResponse.data.artist.genres,
 			album_ids: artistResponse.data.artist.album_ids,
-			image: artistResponse.data.artist.images[0].url,
+			image: artistResponse.data.artist.image,
 		};
 
 		// Make a request to fetch album information using album_ids
