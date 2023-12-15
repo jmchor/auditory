@@ -31,6 +31,7 @@ router.post('/:query', async (req, res, next) => {
 	const query = req.params.query;
 
 	try {
+		console.log('Running the artist search route');
 		const artistResponse = await axios.post(`${api}/search/single-artist/${query}`);
 
 		const artistObject = {
@@ -42,17 +43,17 @@ router.post('/:query', async (req, res, next) => {
 		};
 
 		// Make a request to fetch album information using album_ids
+		console.log('Running the album search route');
 		const albumResponse = await axios.post(`${api}/albums/with-trackids`, artistObject.album_ids);
 
 		//Wait for 3 seconds to avoid rate limiting
 		await new Promise((resolve) => setTimeout(resolve, 3000));
 
 		// Now, make a request to fetch tracks from albums
+		console.log('Running the track search route');
 		const trackResponse = await axios.get(`${api}/tracks/from-albums/${artistObject.artist_id}`);
 
 		// Process trackResponse as needed
-
-		console.log('trackResponse.data:', trackResponse.data);
 
 		// Make a request to process tracks from multiple albums
 		const processedTracks = await axios.post(`${api}/tracks/multiple-albums`, trackResponse.data);
