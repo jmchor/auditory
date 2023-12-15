@@ -132,7 +132,7 @@ router.post('/with-trackids', async (req, res, next) => {
 					) {
 						// Update the existing record
 						const result = await pool.query(
-							'UPDATE albums SET image = $2, albumname = $3, artist = $4, tracks = $5, releasedate = $6, album_type = $7, track_ids = $8, artist_Id = $9 WHERE albumid = $1 RETURNING *',
+							'UPDATE albums SET image = $2, albumname = $3, artist = $4, tracks = $5, releasedate = $6, album_type = $7, track_ids = $8, artist_id = $9 WHERE albumid = $1 RETURNING *',
 							[
 								albumId,
 								image,
