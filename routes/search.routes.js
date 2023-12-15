@@ -276,6 +276,25 @@ router.get('/genre/:query', async (req, res) => {
 	}
 });
 
+//GET ALL ARTISTS
+
+router.get('/artist/all', async (req, res) => {
+	try {
+		const result = await pool.query('SELECT * FROM artists');
+
+		if (result.rows.length > 0) {
+			// Artist found, send the information as JSON
+			res.json({ success: true, response: result.rows });
+		} else {
+			// Artist not found
+			res.json({ success: false, message: 'Artist not found.' });
+		}
+	} catch (error) {
+		console.error('Error searching for artist:', error);
+		res.status(500).json({ success: false, message: 'Internal Server Error' });
+	}
+});
+
 //GET ARTIST
 
 router.get('/artist/:query', async (req, res) => {
@@ -397,7 +416,8 @@ router.get('/artist/:query/albums', async (req, res) => {
 			releaseDate: album.releasedate,
 			trackCount: album.tracks,
 			image: album.image,
-			albumId: album.albumid,
+			albumid: album.albumid,
+			harddrive: album.harddrive,
 		}));
 
 		const response = { ...artist, albums: simplifiedAlbums };
