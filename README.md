@@ -1,5 +1,7 @@
 # Auditory
 
+- the backend witchcraft for the [reactitory frontend magic](https://github.com/jmchor/reactitory)
+
 Auditory is a CRUD API project designed to facilitate the integration of Spotify data into a PostgreSQL database through RESTful API endpoints. By leveraging the Spotify API, Auditory provides a set of endpoints for fetching specific information, such as artists, albums, tracks, and playlists, and seamlessly inserts this data into your database.
 
 The point of it all was to scratch an itch (of course), which was - brushing up on Node again - using PostgreSQL - finally having a way of knowing what music I have and which I don't
