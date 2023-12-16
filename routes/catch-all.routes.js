@@ -34,6 +34,9 @@ router.post('/:query', async (req, res, next) => {
 		console.log('Running the artist search route');
 		const artistResponse = await axios.post(`${api}/search/single-artist/${query}`);
 
+		//Wait for 3 seconds to avoid rate limiting
+		await new Promise((resolve) => setTimeout(resolve, 3000));
+
 		const artistObject = {
 			artist_id: artistResponse.data.artist.artist_id,
 			artist: artistResponse.data.artist.artist,
