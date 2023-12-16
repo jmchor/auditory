@@ -49,11 +49,17 @@ This is pure backend, and you can operate it using Postman.
 
      - **Description:** Retrieves an album and its tracks from the database based on the provided album name.
 
-- **Endpoint:** `GET search/track/:query`
+- **Endpoint:** `GET search/album/with-artist`
 
-     - **Example:** search/track/last christmas
+     - **Example:** search/album/greatest hits, queen
 
-     - **Description:** Retrieves a track from the database based on the provided track name.
+     - **Description:** Retrieves an album and its tracks from the database based on the provided album name, matched with the artist's name
+
+- **Endpoint:** `GET search/track/`
+
+     - **Example:** search/track/wham, last christmas
+
+     - **Description:** Two search terms required, separated by comma. Retrieves an artist_id from the database based on the artist, and retrieves the corresponding track.
 
 - **Endpoint:** `GET search/artist/:query/albums`
 
