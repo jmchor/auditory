@@ -317,25 +317,30 @@ router.get('/artist/:query', async (req, res) => {
 	}
 });
 
-//GET ALBUM With TRACKS
+//GET ALBUM With TRACKS by searching ALBUM and ARTIST
 
-router.get('/album/:query', async (req, res) => {
+router.get('/album/with-artist', async (req, res) => {
 	try {
-		const { query } = req.params;
+		const { query1, query2 } = req.query;
+		const decodedQuery1 = decodeURIComponent(query1).toString();
+		const decodedQuery2 = query2 ? decodeURIComponent(query2).toString() : '';
 
-		// Query the database for the artist using ILIKE for case-insensitive search
-		const albumResult = await pool.query('SELECT * FROM albums WHERE albumname ILIKE $1', [`%${query}%`]);
+		// Query the database for albums with a matching name or artist
+		const albumResult = await pool.query(
+			'SELECT * FROM albums WHERE albumname ILIKE $1 AND artist ILIKE $2',
+			[`%${decodedQuery1}%`, `%${decodedQuery2}%`]
+		);
 
 		if (albumResult.rows.length === 0) {
-			// Artist not found
+			// Album not found
 			res.json({ success: false, message: 'Album not found.' });
 			return;
 		}
 
 		const album = albumResult.rows[0];
-
 		const { albumid } = album;
 
+		// Query the tracks for the selected album
 		const trackResult = await pool.query('SELECT * FROM tracks WHERE albumid = $1', [albumid]);
 
 		const tracksArray = trackResult.rows;
@@ -343,40 +348,85 @@ router.get('/album/:query', async (req, res) => {
 		const response = { ...album, tracklist: tracksArray };
 
 		res.json({ success: true, response: response });
-	} catch (error) {}
+	} catch (error) {
+		console.error('Error searching for album:', error);
+		res.status(500).json({ success: false, message: 'Internal Server Error' });
+	}
 });
 
-//GET TRACK
-
-router.get('/track/:query', async (req, res) => {
+//GET ALBUM WITH TRACKS by searching just ALBUM
+router.get('/album/:query', async (req, res) => {
 	try {
 		const { query } = req.params;
 
+		// Query the database for albums with a matching name
+		const albumResult = await pool.query('SELECT * FROM albums WHERE albumname ILIKE $1', [`%${query}%`]);
+
+		if (albumResult.rows.length === 0) {
+			// Album not found
+			res.json({ success: false, message: 'Album not found.' });
+			return;
+		}
+
+		const album = albumResult.rows[0];
+		const { albumid } = album;
+
+		// Query the tracks for the selected album
+		const trackResult = await pool.query('SELECT * FROM tracks WHERE albumid = $1', [albumid]);
+
+		const tracksArray = trackResult.rows;
+
+		const response = { ...album, tracklist: tracksArray };
+
+		res.json({ success: true, response: response });
+	} catch (error) {
+		console.error('Error searching for album:', error);
+		res.status(500).json({ success: false, message: 'Internal Server Error' });
+	}
+});
+//GET TRACK
+
+router.get('/track', async (req, res) => {
+	try {
+		const { query1, query2 } = req.query;
+		console.log(query1, query2);
+
 		// Query the database for the artist using ILIKE for case-insensitive search
-		const result = await pool.query('SELECT * FROM tracks WHERE track ILIKE $1', [`%${query}%`]);
+		const artistResult = await pool.query('SELECT * FROM artists WHERE artist ILIKE $1', [`%${query1}%`]);
 
-		if (result.rows.length > 0) {
-			// Artist found, send the information as JSON
+		if (artistResult.rows.length > 0) {
+			const artist = artistResult.rows[0];
+			const artist_id = artist.artist_id;
 
-			const track = result.rows[0];
-			const { albumid, artist_id } = track;
+			// Now that we have the artist_id, we can query the tracks table
+			const trackResult = await pool.query(
+				'SELECT * FROM tracks WHERE artist_id = $1 AND track ILIKE $2',
+				[artist_id, `%${query2}%`]
+			);
 
-			const artistResult = await pool.query('SELECT * FROM artists WHERE artist_id = $1', [
-				artist_id,
-			]);
+			if (trackResult.rows.length > 0) {
+				const track = trackResult.rows[0];
+				const { albumid } = track;
 
-			const albumResult = await pool.query('SELECT * FROM albums WHERE albumid = $1', [albumid]);
+				// Query the albums table to get additional information
+				const albumResult = await pool.query('SELECT * FROM albums WHERE albumid = $1', [
+					albumid,
+				]);
 
-			const response = {
-				artist: artistResult.rows[0].artist,
-				...track,
-				album: albumResult.rows[0].albumname,
-			};
+				const response = {
+					artist: artist.artist,
+					...track,
+					album: albumResult.rows[0].albumname,
+				};
 
-			res.json({ success: true, response: response });
+				res.json({ success: true, response: response });
+			} else {
+				// Track not found
+				res.json({ success: false, message: 'Track not found.' });
+			}
 		} else {
 			// Artist not found
-			res.json({ success: false, message: 'Track not found.' });
+			res.json({ success: false, message: 'Artist not found.' });
 		}
 	} catch (error) {
 		console.error('Error searching for track:', error);
