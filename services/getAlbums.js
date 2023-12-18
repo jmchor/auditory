@@ -71,6 +71,7 @@ async function getAlbums(array) {
 					album_type: album_type,
 					image: images[0].url,
 				};
+				console.log('IS THE ID HERE?', albumObject);
 
 				albumObjects.push(albumObject);
 			}
