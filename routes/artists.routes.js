@@ -4,6 +4,56 @@ const pool = require('../db');
 const getArtists = require('../services/getArtist');
 const arraysEqual = require('../services/arraysEqual');
 
+router.get('/:artist_id', async (req, res) => {
+	try {
+		const { artist_id } = req.params;
+
+		console.log('HERE');
+
+		// Query the database for the artist using ILIKE for case-insensitive search
+		const artistResult = await pool.query('SELECT * FROM artists WHERE artist_id = $1', [artist_id]);
+		console.log('ARTIST', artistResult);
+
+		if (artistResult.rows.length === 0) {
+			// Artist not found
+			res.json({ success: false, message: 'Artist not found.' });
+			return;
+		}
+
+		const artist = artistResult.rows[0];
+		console.log('ARTIST', artistResult.rows[0]);
+
+		const { album_ids } = artist;
+
+		if (!album_ids || album_ids.length === 0) {
+			// Artist has no associated albums
+			res.json({ success: true, message: 'Artist has no associated albums.', albums: [] });
+			return;
+		}
+
+		// Query the albums table for the associated albums
+		const albumResult = await pool.query('SELECT * FROM albums WHERE albumid = ANY($1)', [album_ids]);
+
+		// Loop through the album information and create a simplified JSON object
+		const simplifiedAlbums = albumResult.rows.map((album) => ({
+			albumName: album.albumname,
+			releaseDate: album.releasedate,
+			trackCount: album.tracks,
+			image: album.image,
+			albumid: album.albumid,
+			harddrive: album.harddrive,
+		}));
+
+		const response = { ...artist, albums: simplifiedAlbums };
+
+		// Send the simplified information as JSON
+		res.json({ success: true, response: response });
+	} catch (error) {
+		console.error('Error searching for artist albums:', error);
+		res.status(500).json({ success: false, message: 'Internal Server Error' });
+	}
+});
+
 router.post('/single/:id', async (req, res, next) => {
 	const id = req.params.id;
 
