@@ -28,14 +28,17 @@ let albumIDsFromArtistsArray = [];
 //with that array, we use the post /multiple-albums route to insert the tracks into the DB
 
 router.post('/:query', async (req, res, next) => {
-	const query = req.params.query;
+	const { query } = req.params;
+	const decodedQuery = decodeURI(query);
 
 	try {
 		console.log('Running the artist search route');
-		const artistResponse = await axios.post(`${api}/search/single-artist/${query}`);
+		const artistResponse = await axios.post(`${api}/search/single-artist/${decodedQuery}`);
 
 		//Wait for 3 seconds to avoid rate limiting
-		await new Promise((resolve) => setTimeout(resolve, 3000));
+		await new Promise((resolve) => setTimeout(resolve, 6000));
+
+		console.log(artistResponse.data);
 
 		const artistObject = {
 			artist_id: artistResponse.data.artist.artist_id,
@@ -49,15 +52,15 @@ router.post('/:query', async (req, res, next) => {
 		console.log('Running the album search route');
 		const albumResponse = await axios.post(`${api}/albums/with-trackids`, artistObject.album_ids);
 
-		//Wait for 3 seconds to avoid rate limiting
-		await new Promise((resolve) => setTimeout(resolve, 3000));
+		// //Wait for 3 seconds to avoid rate limiting
+		await new Promise((resolve) => setTimeout(resolve, 6000));
 
 		// Now, make a request to fetch tracks from albums
 		console.log('Running the track search route');
 		const trackResponse = await axios.get(`${api}/tracks/from-albums/${artistObject.artist_id}`);
 
 		// Process trackResponse as needed
-
+		await new Promise((resolve) => setTimeout(resolve, 6000));
 		// Make a request to process tracks from multiple albums
 		const processedTracks = await axios.post(`${api}/tracks/multiple-albums`, trackResponse.data);
 
@@ -66,7 +69,10 @@ router.post('/:query', async (req, res, next) => {
 		// Respond to the client or continue with additional logic
 		res.json({
 			success: true,
-			artist: artistResponse.data.artist,
+			artist: {
+				...artistResponse.data.artist,
+				artist_id: artistResponse.data.artist.artist_id,
+			},
 			albums: albumResponse.data,
 			tracks: processedTracks.data,
 		});
