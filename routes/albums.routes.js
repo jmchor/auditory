@@ -12,6 +12,37 @@ function delay(ms) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+router.get('/:albumid', async (req, res, next) => {
+	try {
+		const { albumid } = req.params;
+
+		// Fetch album data
+		const albumQuery = 'SELECT * FROM albums WHERE albumid = $1';
+		const albumResult = await pool.query(albumQuery, [albumid]);
+
+		if (albumResult.rows.length === 0) {
+			// If no album found, send a 404 response
+			return res.status(404).send('Album not found');
+		}
+
+		// Fetch tracks associated with the album
+		const trackQuery = 'SELECT * FROM tracks WHERE albumid = $1';
+		const trackResult = await pool.query(trackQuery, [albumid]);
+
+		// Extract album and track data
+		const albumData = albumResult.rows[0];
+		const tracklist = trackResult.rows;
+
+		// Include the tracklist in the albumData
+		albumData.tracklist = tracklist;
+
+		// Send the response with albumData
+		res.json({ albumData });
+	} catch (error) {
+		console.error('Error fetching album:', error);
+		res.status(500).send('Internal Server Error');
+	}
+});
 //===================================================================================================
 //===========================  FETCH ALBUMIDS FROM ALBUMS TABLE =====================================
 //===================================================================================================
@@ -109,6 +140,8 @@ router.post('/with-trackids', async (req, res, next) => {
 					artist_Id,
 				} = albumObject;
 
+				console.log('ROUTE ALBUM OBJECT', albumObject);
+
 				// Check if the album already exists in the database
 				const existingAlbum = await pool.query('SELECT * FROM albums WHERE albumid = $1', [
 					albumId,
@@ -159,7 +192,7 @@ router.post('/with-trackids', async (req, res, next) => {
 				} else {
 					// If the album doesn't exist, insert it
 					const result = await pool.query(
-						'INSERT INTO albums (albumid, image, albumname, artist, tracks, track_ids, releasedate, album_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+						'INSERT INTO albums (albumid, image, albumname, artist, tracks, track_ids, releasedate, album_type, artist_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
 						[
 							albumId,
 							image,
@@ -169,6 +202,7 @@ router.post('/with-trackids', async (req, res, next) => {
 							track_ids,
 							releaseDate,
 							album_type,
+							artist_Id,
 						]
 					);
 
@@ -203,7 +237,10 @@ router.post('/single-trackids/:id', async (req, res, next) => {
 		const album = await getSingleAlbum(id);
 
 		// Perform operations with the fetched album data
-		const { albumId, image, albumName, artist, releaseDate, trackCount, album_type, track_ids } = album;
+		const { albumId, image, albumName, artist, artist_Id, releaseDate, trackCount, album_type, track_ids } =
+			album;
+
+		console.log('LOOOOOOOK HEEEERE', artist_Id);
 
 		// Check if the album already exists in the database
 		const existingAlbum = await pool.query('SELECT * FROM albums WHERE albumid = $1', [albumId]);
@@ -216,6 +253,7 @@ router.post('/single-trackids/:id', async (req, res, next) => {
 				existingData.image !== image ||
 				existingData.albumname !== albumName ||
 				existingData.artist !== artist ||
+				existingData.artist_Id !== artist_Id ||
 				existingData.tracks !== trackCount ||
 				existingData.releasedate !== releaseDate ||
 				existingData.album_type !== album_type ||
@@ -225,7 +263,7 @@ router.post('/single-trackids/:id', async (req, res, next) => {
 			) {
 				// Update the existing record
 				const result = await pool.query(
-					'UPDATE albums SET image = $2, albumname = $3, artist = $4, tracks = $5, releasedate = $6, album_type = $7, track_ids = $8 WHERE albumid = $1 RETURNING *',
+					'UPDATE albums SET image = $2, albumname = $3, artist = $4, tracks = $5, releasedate = $6, album_type = $7, track_ids = $8, artist_id = $9 WHERE albumid = $1 RETURNING *',
 					[
 						albumId,
 						image,
@@ -235,6 +273,7 @@ router.post('/single-trackids/:id', async (req, res, next) => {
 						releaseDate,
 						album_type,
 						track_ids,
+						artist_Id,
 					]
 				);
 
@@ -246,8 +285,18 @@ router.post('/single-trackids/:id', async (req, res, next) => {
 		} else {
 			// If the album doesn't exist, insert it
 			const result = await pool.query(
-				'INSERT INTO albums (albumid, image, albumname, artist, tracks, track_ids, releasedate, album_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-				[albumId, image, albumName, artist, trackCount, track_ids, releaseDate, album_type]
+				'INSERT INTO albums (albumid, image, albumname, artist, tracks, track_ids, releasedate, album_type,artist_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+				[
+					albumId,
+					image,
+					albumName,
+					artist,
+					trackCount,
+					track_ids,
+					releaseDate,
+					album_type,
+					artist_Id,
+				]
 			);
 
 			// Optionally, you can log the result or perform additional actions
