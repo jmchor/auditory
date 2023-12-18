@@ -168,4 +168,42 @@ router.get('/from-albums/:artistID', async (req, res, next) => {
 	}
 });
 
+router.get('/:trackid', async (req, res, next) => {
+	try {
+		const { trackid } = req.params;
+
+		// Fetch album data
+		const trackQuery = 'SELECT * FROM tracks WHERE track_id = $1';
+		const trackResult = await pool.query(trackQuery, [trackid]);
+
+		if (trackResult.rows.length === 0) {
+			// If no album found, send a 404 response
+			return res.status(404).send('Track not found');
+		}
+
+		const fullTrack = trackResult.rows[0];
+
+		const { artist_id, albumid } = fullTrack;
+
+		const artist = await (
+			await pool.query('SELECT * FROM artists WHERE artist_id = $1', [artist_id])
+		).rows[0].artist;
+
+		const album = await (
+			await pool.query('SELECT * FROM albums WHERE albumid = $1', [albumid])
+		).rows[0].albumname;
+
+		fullTrack.artist = artist;
+		fullTrack.album = album;
+
+		console.log(fullTrack);
+
+		// Send the response with albumData
+		res.json({ track: fullTrack });
+	} catch (error) {
+		console.error('Error fetching album:', error);
+		res.status(500).send('Internal Server Error');
+	}
+});
+
 module.exports = router;
