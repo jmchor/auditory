@@ -19,7 +19,7 @@ module.exports = (app) => {
 			origin: [FRONTEND_URL],
 		})
 	);
-
+	console.log('CONNECTING TO', FRONTEND_URL);
 	// In development environment the app logs
 	app.use(logger('dev'));
 
