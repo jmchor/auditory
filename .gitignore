@@ -25,3 +25,4 @@ ehthumbs.db
 artist.txt
 services/iterate.js
 services/onHarddrive.js
+db/index.js
